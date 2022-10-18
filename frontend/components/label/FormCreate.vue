@@ -31,7 +31,7 @@
             <v-text-field
               :value="description"
               :counter="200"
-              :label="$t('labels.description')"
+              :label="$t('labels.labelDescripton')"
               outlined
               @input="$emit('update:description', $event)"
             />
