@@ -24,7 +24,7 @@
     </template>
     <template #content>
       <v-card>
-        <v-img contain :src="image.fileUrl" :max-height="imageSize.height" class="grey lighten-2" />
+        <v-img contain :src="image.url" :max-height="imageSize.height" class="grey lighten-2" />
         <seq2seq-box
           :annotations="annotations"
           @delete:annotation="remove"
@@ -41,15 +41,15 @@
 </template>
 
 <script>
-import _ from 'lodash'
-import { mdiText, mdiFormatListBulleted } from '@mdi/js'
+import { mdiFormatListBulleted, mdiText } from '@mdi/js'
 import { toRefs, useContext } from '@nuxtjs/composition-api'
+import _ from 'lodash'
 import LayoutText from '@/components/tasks/layout/LayoutText'
 import ListMetadata from '@/components/tasks/metadata/ListMetadata'
+import AnnotationProgress from '@/components/tasks/sidebar/AnnotationProgress.vue'
 import ToolbarLaptop from '@/components/tasks/toolbar/ToolbarLaptop'
 import ToolbarMobile from '@/components/tasks/toolbar/ToolbarMobile'
 import { useLabelList } from '@/composables/useLabelList'
-import AnnotationProgress from '@/components/tasks/sidebar/AnnotationProgress.vue'
 import Seq2seqBox from '~/components/tasks/seq2seq/Seq2seqBox'
 
 export default {
@@ -112,7 +112,8 @@ export default {
       this.projectId,
       this.$route.query.page,
       this.$route.query.q,
-      this.$route.query.isChecked
+      this.$route.query.isChecked,
+      this.$route.query.ordering
     )
     const image = this.images.items[0]
     this.setImageSize(image)
@@ -137,9 +138,10 @@ export default {
 
   watch: {
     '$route.query': '$fetch',
-    enableAutoLabeling(val) {
-      if (val) {
-        this.list(this.image.id)
+    async enableAutoLabeling(val) {
+      if (val && !this.image.isConfirmed) {
+        await this.autoLabel(this.image.id)
+        await this.list(this.image.id)
       }
     }
   },
@@ -147,7 +149,7 @@ export default {
   async created() {
     this.getLabelList(this.projectId)
     this.project = await this.$services.project.findById(this.projectId)
-    this.progress = await this.$services.metrics.fetchMyProgress(this.projectId)
+    this.progress = await this.$repositories.metrics.fetchMyProgress(this.projectId)
   },
 
   methods: {
@@ -184,7 +186,7 @@ export default {
     },
 
     async updateProgress() {
-      this.progress = await this.$services.metrics.fetchMyProgress(this.projectId)
+      this.progress = await this.$repositories.metrics.fetchMyProgress(this.projectId)
     },
 
     async confirm() {
@@ -200,7 +202,7 @@ export default {
         self.imageSize.height = this.height
         self.imageSize.width = this.width
       }
-      img.src = val.fileUrl
+      img.src = val.url
     }
   }
 }
