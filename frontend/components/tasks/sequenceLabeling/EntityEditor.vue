@@ -7,6 +7,7 @@
       :entities="entities"
       :entity-labels="entityLabels"
       :relations="relations"
+      :max-label-length="maxLabelLength"
       :relation-labels="relationLabels"
       :allow-overlapping="allowOverlapping"
       :grapheme-mode="graphemeMode"
@@ -56,6 +57,10 @@ export default Vue.extend({
     dark: {
       type: Boolean,
       default: false
+    },
+    maxLabelLength: {
+      type: Number,
+      default: 200
     },
     rtl: {
       type: Boolean,
