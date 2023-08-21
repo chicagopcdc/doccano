@@ -82,10 +82,7 @@
 <script>
 import { mdiChevronDown, mdiChevronUp } from '@mdi/js'
 import { mapGetters } from 'vuex'
-// import { ref } from 'vue'
-// import { useRefHistory } from '@vueuse/core'
 import LayoutText from '@/components/tasks/layout/LayoutText'
-// import ListMetadata from '@/components/tasks/metadata/ListMetadata'
 import EntityEditor from '@/components/tasks/sequenceLabeling/EntityEditor.vue'
 import AnnotationProgress from '@/components/tasks/sidebar/AnnotationProgress.vue'
 import ToolbarLaptop from '@/components/tasks/toolbar/ToolbarLaptop'
