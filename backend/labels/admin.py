@@ -4,7 +4,7 @@ from .models import BoundingBox, Category, Segmentation, Span, TextLabel
 
 
 class SpanAdmin(admin.ModelAdmin):
-    list_display = ("example", "label", "start_offset", "user")
+    list_display = ("example", "label", "start_offset", "user", "meta")
     ordering = ("example",)
 
 

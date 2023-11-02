@@ -46,6 +46,7 @@ class Span(Label):
     label = models.ForeignKey(to=SpanType, on_delete=models.CASCADE)
     start_offset = models.IntegerField()
     end_offset = models.IntegerField()
+    meta = models.JSONField(default=dict)
 
     def __str__(self):
         text = self.example.text[self.start_offset : self.end_offset]
@@ -58,13 +59,15 @@ class Span(Label):
             super().validate_unique(exclude=exclude)
             return
 
-        overlapping_span = (
-            Span.objects.exclude(id=self.id)
-            .filter(example=self.example)
-            .filter(
-                models.Q(start_offset__gte=self.start_offset, start_offset__lt=self.end_offset)
-                | models.Q(end_offset__gt=self.start_offset, end_offset__lte=self.end_offset)
-                | models.Q(start_offset__lte=self.start_offset, end_offset__gte=self.end_offset)
+        overlapping_span = Span.objects.filter(example=self.example).filter(
+            models.Q(
+                start_offset__gte=self.start_offset, start_offset__lt=self.end_offset
+            )
+            | models.Q(
+                end_offset__gt=self.start_offset, end_offset__lte=self.end_offset
+            )
+            | models.Q(
+                start_offset__lte=self.start_offset, end_offset__gte=self.end_offset
             )
         )
         if is_collaborative:
