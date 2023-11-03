@@ -191,3 +191,11 @@ Here are some tips might be helpful. [How to Contribute to Doccano Project](http
 
 For help and feedback, feel free to contact [the author](https://github.com/Hironsan).
 
+
+## Build your own container
+docker build --no-cache --progress=plain -t doccano:20230911 ./docker/docker-frontend/  &> build.log
+
+from main doccano root directory:
+- docker build --no-cache --progress=plain --file ./docker/Dockerfile.nginx -t doccano:fe_20231103 ./
+
+- docker build --no-cache --progress=plain --file ./docker/Dockerfile.prod -t doccano:be_20231103 ./
