@@ -199,3 +199,8 @@ from main doccano root directory:
 - docker build --no-cache --progress=plain --file ./docker/Dockerfile.nginx -t doccano:fe_20231103 ./
 
 - docker build --no-cache --progress=plain --file ./docker/Dockerfile.prod -t doccano:be_20231103 ./
+
+from the `/` root forder:
+- sudo docker-compose -f docker/docker-compose.prod.yml ps
+- sudo docker-compose -f docker/docker-compose.prod.yml up -d
+- docker-compose -f docker/docker-compose.prod.yml --env-file .env up (not tried yet)
