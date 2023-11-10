@@ -13,6 +13,7 @@ from .readers import (
 )
 from examples.models import Example
 from projects.models import Project
+from django.core.exceptions import ObjectDoesNotExist
 
 
 class ExampleMaker:
@@ -50,6 +51,42 @@ class ExampleMaker:
                 error = FileParseException(row[UPLOAD_NAME_COLUMN], line_num, message)
                 self._errors.append(error)
         return examples
+
+    def make_or_update(self, df: pd.DataFrame) -> List[Example]:
+        if not self.check_column_existence(df):
+            return []
+        self.check_value_existence(df)
+        # make dataframe without exclude columns and missing data
+        df_with_data_column = df.loc[:, ~df.columns.isin(self.exclude_columns)]
+        df_with_data_column = df_with_data_column.dropna(subset=[self.column_data])
+
+        create_examples = []
+        update_examples = []
+        for row in df_with_data_column.to_dict(orient="records"):
+            line_num = row.pop(LINE_NUMBER_COLUMN, 0)
+            row[DEFAULT_TEXT_COLUMN] = row.pop(self.column_data)  # Rename column for parsing
+            print(f"row: {row}")
+            print(f'id: {row["id"]}')
+            example_exists = False
+            try:
+                if Example.objects.get(pk=row["id"]):
+                    example_exists = True
+            except ObjectDoesNotExist:
+                pass
+
+            try:
+                data = self.data_class.parse(**row)
+                if example_exists:
+                    example = data.update(row["id"])
+                    update_examples.append(example)
+                else:
+                    example = data.create(self.project)
+                    create_examples.append(example)
+            except ValueError:
+                message = f"Invalid data in line {line_num}"
+                error = FileParseException(row[UPLOAD_NAME_COLUMN], line_num, message)
+                self._errors.append(error)
+        return update_examples, create_examples
 
     def check_column_existence(self, df: pd.DataFrame) -> bool:
         message = f"Column {self.column_data} not found in the file"

@@ -48,6 +48,11 @@ class TextData(BaseData):
             meta=self.meta,
         )
 
+    def update(self, id: int) -> Example:
+        document = Example.objects.filter(pk=id).first()
+        document.meta = self.meta
+        document.text = self.text
+        return document
 
 class BinaryData(BaseData):
     def create(self, project: Project) -> Example:

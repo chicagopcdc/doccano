@@ -74,8 +74,16 @@ class DatasetWithSingleLabelType(Dataset):
     def save(self, user: User, batch_size: int = 1000):
         for records in self.reader.batch(batch_size):
             # create examples
-            examples = Examples(self.example_maker.make(records))
-            examples.save()
+            update_examples, create_examples = self.example_maker.make_or_update(records)
+            
+            if update_examples:
+                Examples(update_examples).update()
+            
+            if create_examples:
+                create_examples = Examples(create_examples)
+                create_examples.save()
+            else:
+                return
 
             # create label types
             labels = self.labels_class(self.label_maker.make(records), self.types)
@@ -83,7 +91,7 @@ class DatasetWithSingleLabelType(Dataset):
             labels.save_types(self.project)
 
             # create Labels
-            labels.save(user, examples)
+            labels.save(user, create_examples)
 
     @property
     def errors(self) -> List[FileParseException]:
