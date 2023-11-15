@@ -2,6 +2,7 @@ export default {
   labels: 'Labels',
   shortkey: 'Shortkey',
   color: 'Color',
+  meta: 'Metadata',
   createLabel: 'Create Label',
   importLabels: 'Import Labels',
   exportLabels: 'Export Labels',

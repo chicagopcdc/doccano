@@ -64,45 +64,47 @@ class TestSpanLabel(TestLabel):
     task = ProjectType.SEQUENCE_LABELING
 
     def test_comparison(self):
-        span1 = SpanLabel(label="A", start_offset=0, end_offset=1, example_uuid=uuid.uuid4())
-        span2 = SpanLabel(label="A", start_offset=1, end_offset=2, example_uuid=uuid.uuid4())
+        span1 = SpanLabel(label="A", start_offset=0, end_offset=1, example_uuid=uuid.uuid4(), meta={})
+        span2 = SpanLabel(label="A", start_offset=1, end_offset=2, example_uuid=uuid.uuid4(), meta={})
         self.assertLess(span1, span2)
 
     def test_parse_tuple(self):
         example_uuid = uuid.uuid4()
-        span = SpanLabel.parse(example_uuid, obj=(0, 1, "A"))
+        span = SpanLabel.parse(example_uuid, obj=(0, 1, "A", {}))
         self.assertEqual(span.label, "A")
         self.assertEqual(span.start_offset, 0)
         self.assertEqual(span.end_offset, 1)
+        self.assertEqual(span.meta, {})
 
     def test_parse_dict(self):
         example_uuid = uuid.uuid4()
-        span = SpanLabel.parse(example_uuid, obj={"label": "A", "start_offset": 0, "end_offset": 1})
+        span = SpanLabel.parse(example_uuid, obj={"label": "A", "start_offset": 0, "end_offset": 1, "meta":{}})
         self.assertEqual(span.label, "A")
         self.assertEqual(span.start_offset, 0)
         self.assertEqual(span.end_offset, 1)
+        self.assertEqual(span.meta, {})
 
     def test_invalid_negative_offset(self):
         with self.assertRaises(ValueError):
-            SpanLabel(label="A", start_offset=-1, end_offset=1, example_uuid=uuid.uuid4())
+            SpanLabel(label="A", start_offset=-1, end_offset=1, example_uuid=uuid.uuid4(), meta={})
 
     def test_invalid_offset(self):
         with self.assertRaises(ValueError):
-            SpanLabel(label="A", start_offset=1, end_offset=0, example_uuid=uuid.uuid4())
+            SpanLabel(label="A", start_offset=1, end_offset=0, example_uuid=uuid.uuid4(), meta={})
 
     def test_parse_invalid_dict(self):
         example_uuid = uuid.uuid4()
         with self.assertRaises(ValueError):
-            SpanLabel.parse(example_uuid, obj={"label": "A", "start_offset": 0})
+            SpanLabel.parse(example_uuid, obj={"label": "A", "start_offset": 0, "meta":{}})
 
     def test_create_type(self):
-        span = SpanLabel(label="A", start_offset=0, end_offset=1, example_uuid=uuid.uuid4())
+        span = SpanLabel(label="A", start_offset=0, end_offset=1, example_uuid=uuid.uuid4(), meta={})
         span_type = span.create_type(self.project.item)
         self.assertIsInstance(span_type, SpanType)
         self.assertEqual(span_type.text, "A")
 
     def test_create(self):
-        span = SpanLabel(label="A", start_offset=0, end_offset=1, example_uuid=uuid.uuid4())
+        span = SpanLabel(label="A", start_offset=0, end_offset=1, example_uuid=uuid.uuid4(), meta={})
         types = MagicMock()
         types.__getitem__.return_value = mommy.make(SpanType, project=self.project.item)
         span_model = span.create(self.user, self.example, types)

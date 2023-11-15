@@ -34,7 +34,7 @@ class TestLabel(TestCase):
 
     def test_can_add_label_only_suffix_key(self):
         project = mommy.make("Project")
-        label = CategoryType(project=project, text="example", suffix_key="a")
+        label = CategoryType(project=project, text="example", suffix_key="a", meta={})
         try:
             label.full_clean()
         except ValidationError:

@@ -292,7 +292,7 @@ class TestImportIntentDetectionAndSlotFillingData(TestImportData):
         for text, expected_labels in dataset:
             example = Example.objects.get(text=text)
             cats = set(cat.label.text for cat in example.categories.all())
-            entities = [(span.start_offset, span.end_offset, span.label.text) for span in example.spans.all()]
+            entities = [(span.start_offset, span.end_offset, span.label.text, span.meta) for span in example.spans.all()]
             self.assertEqual(cats, set(expected_labels["cats"]))
             self.assertEqual(entities, expected_labels["entities"])
 
@@ -300,9 +300,9 @@ class TestImportIntentDetectionAndSlotFillingData(TestImportData):
         filename = "intent/example.jsonl"
         file_format = "JSONL"
         dataset = [
-            ("exampleA", {"cats": ["positive"], "entities": [(0, 1, "LOC")]}),
+            ("exampleA", {"cats": ["positive"], "entities": [(0, 1, "LOC", {})]}),
             ("exampleB", {"cats": ["positive"], "entities": []}),
-            ("exampleC", {"cats": [], "entities": [(0, 1, "LOC")]}),
+            ("exampleC", {"cats": [], "entities": [(0, 1, "LOC", {})]}),
             ("exampleD", {"cats": [], "entities": []}),
         ]
         self.import_dataset(filename, file_format, self.task)

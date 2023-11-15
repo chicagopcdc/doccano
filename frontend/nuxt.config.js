@@ -179,6 +179,10 @@ export default {
           name: '[path][name].[ext]'
         }
       })
+      config.module.rules.push({
+        test: /node_modules[\\/]@flatten-js/,
+        loader: require.resolve('esbuild-loader'),
+      })
     }
   }
 }
