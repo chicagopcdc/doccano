@@ -6,10 +6,10 @@ function toModel(item: { [key: string]: any }): LabelItem {
   return new LabelItem(
     item.id,
     item.text,
+    item.meta,
     item.prefix_key,
     item.suffix_key,
     item.background_color,
-    item.description,
     item.text_color
   )
 }
@@ -18,10 +18,10 @@ function toPayload(item: LabelItem): { [key: string]: any } {
   return {
     id: item.id,
     text: item.text,
+    meta: item.meta,
     prefix_key: item.prefixKey,
     suffix_key: item.suffixKey,
     background_color: item.backgroundColor,
-    description: item.description,
     text_color: item.textColor
   }
 }

@@ -29,10 +29,13 @@
     <template #[`item.backgroundColor`]="props">
       <v-chip
         :color="props.item.backgroundColor"
-        :text-color="$contrastColor(props.item.backgroundColor)"
+  
       >
         {{ props.item.backgroundColor }}
       </v-chip>
+    </template>
+    <template #[`item.meta`]="{ item }">
+      {{ JSON.stringify(item.meta, null, 4) }}
     </template>
     <template #[`item.actions`]="{ item }">
       <v-icon small @click="$emit('edit', item)">
@@ -85,7 +88,7 @@ export default Vue.extend({
         { text: this.$t('generic.name'), value: 'text' },
         { text: this.$t('labels.shortkey'), value: 'suffixKey' },
         { text: this.$t('labels.color'), value: 'backgroundColor' },
-        { text: this.$t('labels.description'), value: 'description' },
+        { text: this.$t('labels.meta'), value: 'meta' },
         { text: 'Actions', value: 'actions', sortable: false }
       ]
       if (!this.disableEdit) {

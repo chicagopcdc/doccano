@@ -46,7 +46,7 @@ class Span(Label):
     label = models.ForeignKey(to=SpanType, on_delete=models.CASCADE)
     start_offset = models.IntegerField()
     end_offset = models.IntegerField()
-    meta = models.JSONField(default=dict)
+    meta = models.JSONField(default=dict, null=True, blank=True)
 
     def __str__(self):
         text = self.example.text[self.start_offset : self.end_offset]

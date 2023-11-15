@@ -1,6 +1,6 @@
 import abc
 import uuid
-from typing import Any, Optional, Dict
+from typing import Any, Dict, Optional
 
 from pydantic import UUID4, BaseModel, NonNegativeInt, constr, root_validator
 
