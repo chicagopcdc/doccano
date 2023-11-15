@@ -1,6 +1,6 @@
 import abc
 import uuid
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 from pydantic import UUID4, BaseModel, NonNegativeInt, constr, root_validator
 
@@ -65,6 +65,7 @@ class SpanLabel(Label):
     label: constr(min_length=1)  # type: ignore
     start_offset: NonNegativeInt
     end_offset: NonNegativeInt
+    meta: Dict[str, Any]
 
     def __lt__(self, other):
         return self.start_offset < other.start_offset
@@ -79,7 +80,7 @@ class SpanLabel(Label):
     @classmethod
     def parse(cls, example_uuid: UUID4, obj: Any):
         if isinstance(obj, list) or isinstance(obj, tuple):
-            columns = ["start_offset", "end_offset", "label"]
+            columns = ["start_offset", "end_offset", "label", "meta"]
             obj = zip(columns, obj)
             return cls(example_uuid=example_uuid, **dict(obj))
         elif isinstance(obj, dict):
@@ -97,6 +98,7 @@ class SpanLabel(Label):
             start_offset=self.start_offset,
             end_offset=self.end_offset,
             label=types[self.label],
+            meta=self.meta
         )
 
 

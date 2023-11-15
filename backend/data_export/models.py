@@ -56,10 +56,16 @@ class ExportedSpan(Span):
             "label": self.label.text,
             "start_offset": self.start_offset,
             "end_offset": self.end_offset,
+            "meta": self.meta,
         }
 
     def to_tuple(self):
-        return self.start_offset, self.end_offset, self.label.text
+        return (
+            self.start_offset,
+            self.end_offset,
+            self.label.text,
+            self.meta,
+        )
 
     class Meta:
         proxy = True

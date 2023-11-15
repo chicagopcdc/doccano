@@ -176,7 +176,7 @@ class TestSpan(TestCase):
             mommy.make("Span", example=example, start_offset=start_offset, end_offset=end_offset, user=user)
 
     def test_update(self):
-        span = mommy.make("Span", example=self.example, start_offset=0, end_offset=5)
+        span = mommy.make("Span", example=self.example, start_offset=0, end_offset=5, meta={})
         span.end_offset = 6
         span.save()
 

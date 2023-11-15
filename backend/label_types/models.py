@@ -31,6 +31,7 @@ class LabelType(models.Model):
     text_color = models.CharField(max_length=7, default="#ffffff")
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
+    meta = models.JSONField(default=dict, null=True, blank=True)
 
     def __str__(self):
         return self.text
