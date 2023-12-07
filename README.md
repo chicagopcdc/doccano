@@ -204,3 +204,33 @@ from the `/` root forder:
 - sudo docker-compose -f docker/docker-compose.prod.yml ps
 - sudo docker-compose -f docker/docker-compose.prod.yml up -d
 - docker-compose -f docker/docker-compose.prod.yml --env-file .env up (not tried yet)
+
+
+## Run the container on EC2 AWS AMI with SSL cert
+- get a cert from certificate manager for the ALB
+- update the DNS provider with the CNAME
+
+- add useful secrets to secrets manager and pull them from the userdata script
+  - quay_io_creds (quay.io login creds)
+  - doccano_creds (all the information needed in the .env file)
+
+- create a security group allowing only 80 and 22. (this will be for every ec2 inside the target group for the alb) 
+  - TODO SSH can be restricted to UChicago IPS and 80 to the load balancer
+- add ec2_secrets_manager_role ( or create it if not created previously. Give EC2 read permission on the secrets manager)
+- create an EC2 with no public IP. Assign to it the previously creted security group, role, and the ec2_user_data.sh script.
+
+
+- create security group for ALB list to all from 80 and 443
+- create target group for ALB (protocol 80, http1, health check: /api/v0/_status) and add the ec2 created previously
+  - For some reason if the instance is only internal it will now turn healthy in the target group. You can just attach a public IP, wait 2/3 minutes for it to turn healthy and then you can remove the elastic IP. That seems to be solving the issue. (TRY added ALB's security group on port 80 in EC2's security group. By doing this, the issue will be resolved.)
+- create ALB
+  - select previously created security group
+  - listen to 443 and forward to target group created previously
+  - add certificate created previously
+- After creation add listener to listen to 80 and redirect (redirect to url) 301 to 443
+  
+
+## Debugging
+### create an EC2 with public IP in the same subnet and SSH from there, then kill the EC2
+### forward the logs to cloudwatch and look at cloudwatch
+### Create elastic IP and attach it to the instance, then remove once you are done
