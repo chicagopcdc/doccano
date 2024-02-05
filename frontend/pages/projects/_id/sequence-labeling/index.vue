@@ -15,7 +15,6 @@
     </template>
     <template #content>
       <v-card>
-        <KeepAlive>
           <div class="annotation-text pa-4">
             <entity-editor
               :dark="$vuetify.theme.dark"
@@ -37,44 +36,50 @@
               @contextmenu:relation="deleteRelation"
             />
           </div>
-        </KeepAlive>
       </v-card>
     </template>
     <template #sidebar>
       <annotation-progress :progress="progress" />
-      <!-- <v-card class="mt-4">
-        <v-card-title>L=This needs to go</v-card-title>
-        <v-card-text>
-          <v-switch v-if="useRelationLabeling" v-model="relationMode">
-            <template #label>
-              <span v-if="relationMode">Relation</span>
-              <span v-else>Span</span>
-            </template>
-          </v-switch>
-          <v-chip-group v-model="selectedLabelIndex" column>
-            <v-chip
-              v-for="(item, index) in labelTypes"
-              :key="item.id"
-              v-shortkey="[item.suffixKey]"
-              :color="item.backgroundColor"
-              filter
-              :text-color="$contrastColor(item.backgroundColor)"
-              @shortkey="selectedLabelIndex = index"
-            >
-              {{ item.text }}
-              <v-avatar
-                v-if="item.suffixKey"
-                right
-                color="white"
-                class="black--text font-weight-bold"
+      <v-card class="mt-4">
+        <v-card-title>
+          Label Types
+          <v-spacer />
+          <v-btn icon @click="showLabelTypes = !showLabelTypes">
+            <v-icon>{{ showLabelTypes ? mdiChevronUp : mdiChevronDown }}</v-icon>
+          </v-btn>
+        </v-card-title>
+        <v-expand-transition>
+          <v-card-text v-show="showLabelTypes">
+            <v-switch v-if="useRelationLabeling" v-model="relationMode">
+              <template #label>
+                <span v-if="relationMode">Relation</span>
+                <span v-else>Span</span>
+              </template>
+            </v-switch>
+            <!-- <v-chip-group v-model="selectedLabelIndex" column>
+              <v-chip
+                v-for="(item, index) in labelTypes"
+                :key="item.id"
+                v-shortkey="[item.suffixKey]"
+                :color="item.backgroundColor"
+                filter
+                :text-color="$contrastColor(item.backgroundColor)"
+                @shortkey="selectedLabelIndex = index"
               >
-                {{ item.suffixKey }}
-              </v-avatar>
-            </v-chip>
-          </v-chip-group>
-        </v-card-text>
-      </v-card> -->
-      <!-- <list-metadata :metadata="doc.meta" class="mt-4" /> -->
+                {{ item.text }}
+                <v-avatar
+                  v-if="item.suffixKey"
+                  right
+                  color="white"
+                  class="black--text font-weight-bold"
+                >
+                  {{ item.suffixKey }}
+                </v-avatar>
+              </v-chip> -->
+            <!-- </v-chip-group> -->
+          </v-card-text>
+        </v-expand-transition>
+      </v-card>
     </template>
   </layout-text>
 </template>
