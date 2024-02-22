@@ -56,7 +56,7 @@
                 <span v-else>Span</span>
               </template>
             </v-switch>
-            <!-- <v-chip-group v-model="selectedLabelIndex" column>
+            <v-chip-group v-model="selectedLabelIndex" column>
               <v-chip
                 v-for="(item, index) in labelTypes"
                 :key="item.id"
@@ -75,8 +75,8 @@
                 >
                   {{ item.suffixKey }}
                 </v-avatar>
-              </v-chip> -->
-            <!-- </v-chip-group> -->
+              </v-chip> 
+            </v-chip-group>
           </v-card-text>
         </v-expand-transition>
       </v-card>
