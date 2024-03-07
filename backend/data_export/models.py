@@ -22,7 +22,7 @@ class ExportedExample(Example):
     objects = ExportedExampleManager()
 
     def to_dict(self, is_text_project=True) -> Dict[str, Any]:
-        return {"id": self.id, DATA: self.text if is_text_project else self.upload_name, **self.meta}
+        return {DATA: self.text if is_text_project else self.upload_name, **self.meta, "id": self.id}
 
     class Meta:
         proxy = True
