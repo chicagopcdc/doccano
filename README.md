@@ -196,9 +196,9 @@ For help and feedback, feel free to contact [the author](https://github.com/Hiro
 docker build --no-cache --progress=plain -t doccano:20230911 ./docker/docker-frontend/  &> build.log
 
 from main doccano root directory:
-- docker build --no-cache --progress=plain --file ./docker/Dockerfile.nginx -t doccano:fe_20231103 ./
+- docker build --no-cache --progress=plain --file ./docker/Dockerfile.nginx -t doccano:fe_20240307 ./
 
-- docker build --no-cache --progress=plain --file ./docker/Dockerfile.prod -t doccano:be_20231103 ./
+- docker build --no-cache --progress=plain --file ./docker/Dockerfile.prod -t doccano:be_20240307 ./
 
 from the `/` root forder:
 - sudo docker-compose -f docker/docker-compose.prod.yml ps
@@ -234,3 +234,7 @@ from the `/` root forder:
 ### create an EC2 with public IP in the same subnet and SSH from there, then kill the EC2
 ### forward the logs to cloudwatch and look at cloudwatch
 ### Create elastic IP and attach it to the instance, then remove once you are done
+
+
+
+https://github.com/ricardobranco777/docker-volumes.sh/tree/master
