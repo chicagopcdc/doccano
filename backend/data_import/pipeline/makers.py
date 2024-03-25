@@ -1,6 +1,7 @@
-from typing import List, Optional, Type
+from typing import List, Optional, Tuple, Type, Union
 
 import pandas as pd
+from django.core.exceptions import ObjectDoesNotExist
 
 from .data import BaseData
 from .exceptions import FileParseException
@@ -13,7 +14,6 @@ from .readers import (
 )
 from examples.models import Example
 from projects.models import Project
-from django.core.exceptions import ObjectDoesNotExist
 
 
 class ExampleMaker:
@@ -52,7 +52,7 @@ class ExampleMaker:
                 self._errors.append(error)
         return examples
 
-    def make_or_update(self, df: pd.DataFrame) -> List[Example]:
+    def make_or_update(self, df: pd.DataFrame) -> Union[Tuple[List[Example], List[Example]], List[None]]:
         if not self.check_column_existence(df):
             return []
         self.check_value_existence(df)
@@ -65,19 +65,16 @@ class ExampleMaker:
         for row in df_with_data_column.to_dict(orient="records"):
             line_num = row.pop(LINE_NUMBER_COLUMN, 0)
             row[DEFAULT_TEXT_COLUMN] = row.pop(self.column_data)  # Rename column for parsing
-            print(f"row: {row}")
-            print(f'id: {row["id"]}')
             example_exists = False
             try:
-                if Example.objects.get(pk=row["id"]):
-                    example_exists = True
-            except ObjectDoesNotExist:
+                Example.objects.get(uuid=row["example_uuid"])
+                example_exists = True
+            except ObjectDoesNotExist as e:
                 pass
-
             try:
                 data = self.data_class.parse(**row)
                 if example_exists:
-                    example = data.update(row["id"])
+                    example = data.update(row["example_uuid"])
                     update_examples.append(example)
                 else:
                     example = data.create(self.project)

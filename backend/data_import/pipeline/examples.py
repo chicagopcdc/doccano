@@ -3,7 +3,7 @@ from typing import Dict, List
 from pydantic import UUID4
 
 from examples.models import Example
-
+from labels.models import Span
 class Examples:
     def __init__(self, examples: List[Example]):
         self.examples = examples
@@ -19,6 +19,10 @@ class Examples:
         examples = Example.objects.bulk_create(self.examples)
         self.uuid_to_example = {example.uuid: example for example in examples}
     
-    def update(self):
-        self.examples = Example.objects.bulk_update(self.examples, ["text", "meta"])
-        return
+    def save_update(self):
+        for example in self.examples:
+            # Remove spans prior to update.
+            Span.objects.all().filter(example_id=example.pk).delete()
+        Example.objects.bulk_update(self.examples, ["text", "meta"])
+        self.uuid_to_example = {example.uuid: example for example in self.examples}
+        
