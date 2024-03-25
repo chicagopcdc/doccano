@@ -98,7 +98,7 @@ class SpanLabel(Label):
             start_offset=self.start_offset,
             end_offset=self.end_offset,
             label=types[self.label],
-            meta=self.meta
+            meta=self.meta,
         )
 
 
