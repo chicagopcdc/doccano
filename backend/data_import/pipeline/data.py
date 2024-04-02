@@ -1,5 +1,5 @@
 import abc
-from typing import Any, Dict
+from typing import Any, Dict, Union
 
 from pydantic import UUID4, BaseModel, validator
 
@@ -27,6 +27,10 @@ class BaseData(BaseModel, abc.ABC):
     def create(self, project: Project) -> Example:
         raise NotImplementedError("Please implement this method in the subclass.")
 
+    @abc.abstractmethod
+    def update(self, project: Project) -> Union[Example, None]:
+        raise NotImplementedError("Please implement this method in the subclass.")
+
 
 class TextData(BaseData):
     text: str
@@ -48,11 +52,13 @@ class TextData(BaseData):
             meta=self.meta,
         )
 
-    def update(self, id: int) -> Example:
-        document = Example.objects.filter(pk=id).first()
-        document.meta = self.meta
-        document.text = self.text
+    def update(self, example_uuid: int) -> Union[Example, None]:
+        document = Example.objects.filter(uuid=example_uuid).first()
+        if document:
+            document.meta = self.meta
+            document.text = self.text
         return document
+
 
 class BinaryData(BaseData):
     def create(self, project: Project) -> Example:
