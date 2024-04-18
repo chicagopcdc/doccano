@@ -87,9 +87,9 @@ class DatasetWithSingleLabelType(Dataset):
 
                 # make label types
                 labels = self.labels_class(self.label_maker.make(records), self.types)
+
                 labels.clean(self.project)
                 labels.save_types(self.project)
-
                 # create Labels
                 labels.save(user, update_examples)
 
@@ -137,13 +137,6 @@ class TextClassificationDataset(DatasetWithSingleLabelType):
     labels_class = Categories
 
 
-class SequenceLabelingDataset(DatasetWithSingleLabelType):
-    data_class = TextData
-    label_class = SpanLabel
-    label_type = SpanType
-    labels_class = Spans
-
-
 class Seq2seqDataset(DatasetWithSingleLabelType):
     data_class = TextData
     label_class = TextLabel
@@ -171,7 +164,6 @@ class RelationExtractionDataset(Dataset):
             update_examples, create_examples = self.example_maker.make_or_update(records)
 
             if update_examples:
-                print("Processing update")
                 update_examples = Examples(update_examples)
                 update_examples.save_update()
 
@@ -210,6 +202,13 @@ class RelationExtractionDataset(Dataset):
         return self.reader.errors + self.example_maker.errors + self.span_maker.errors + self.relation_maker.errors
 
 
+class SequenceLabelingDataset(RelationExtractionDataset):
+    data_class = TextData
+    label_class = SpanLabel
+    label_type = SpanType
+    labels_class = Spans
+
+
 class CategoryAndSpanDataset(Dataset):
     def __init__(self, reader: Reader, project: Project, **kwargs):
         super().__init__(reader, project, **kwargs)
@@ -230,7 +229,6 @@ class CategoryAndSpanDataset(Dataset):
             update_examples, create_examples = self.example_maker.make_or_update(records)
 
             if update_examples:
-                print("Processing update")
                 update_examples = Examples(update_examples)
                 update_examples.save_update()
 
