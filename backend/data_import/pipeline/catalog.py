@@ -209,7 +209,7 @@ class AudioFile(Format):
 class ArgColumn(BaseModel):
     encoding: encodings = "utf_8"
     column_data: str = "text"
-    column_label: str = "label"
+    column_label: str = "entities"
 
 
 class ArgDelimiter(ArgColumn):
