@@ -30,6 +30,8 @@ class ExportedExample(Example):
         }
         if "meta" in example:
             del example["meta"]
+        if "label" in example:
+            example["entities"] = example.pop("label")
         return example
 
     class Meta:
