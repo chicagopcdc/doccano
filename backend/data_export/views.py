@@ -1,3 +1,7 @@
+import datetime
+import os
+from django.shortcuts import get_object_or_404, render
+import requests
 from celery.result import AsyncResult
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
@@ -43,3 +47,26 @@ class DatasetExportAPI(APIView):
             project_id=project_id, file_format=file_format, confirmed_only=export_approved, **request.data
         )
         return Response({"task_id": task.task_id})
+
+class DatasetToGearbox(APIView):
+    permission_classes = [IsAuthenticated & IsProjectAdmin]
+    def post(self, request, *args, **kwargs):
+        # Create task
+        project_id = self.kwargs["project_id"]
+        file_format = request.data.pop("format")
+        export_approved = request.data.pop("exportApproved", False)
+        task = export_dataset.delay(
+            project_id=project_id, file_format=file_format, confirmed_only=export_approved, **request.data
+        )
+        export_filename = AsyncResult(task.task_id).get()
+        # Get GEARBOX_URL from the environment
+        GEARBOX_URL = os.getenv("GEARBOX_URL")
+        status_code = None
+        response = None
+        with open(export_filename, 'rb') as f:
+            filename = f"doccano_export_{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.zip"
+            file = {"zip_file": (filename, f, "application/zip")}
+            # Send file to Gearbox
+            response = requests.post(GEARBOX_URL, files=file, timeout=15)
+        status_code = response.ok
+        return Response({"status_code": status_code})

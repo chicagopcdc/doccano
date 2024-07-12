@@ -26,4 +26,15 @@ export class APIDownloadRepository {
     document.body.appendChild(link)
     link.click()
   }
+
+  async callGearboxAPI(projectId: string, format: string, exportApproved: boolean): Promise<Number> {
+    // Create task
+    const url = `/projects/${projectId}/send-dataset`
+    const data = {
+      format,
+      exportApproved
+    }
+    const response = await this.request.post(url, data)
+    return response.status
+  }
 }

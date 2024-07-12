@@ -2973,7 +2973,7 @@
   resolved "https://registry.yarnpkg.com/@vuejs-community/vue-filter-date-format/-/vue-filter-date-format-1.7.1.tgz#1a54388d2b9d8641122a6e0dbad932d8e5732953"
   integrity sha512-BnUyC/bl+mRgMQyeK2VQRzpB7Jc9J4Suj/mi1bLoPJE3WksvwuzCwrXXqmwn96tjhrDEukoH60o9iJ497G619Q==
 
-"@vuejs-community/vue-filter-date-parse@^1.1.6":
+"@vuejs-community/vue-filter-date-parse@^1.2.0":
   version "1.2.0"
   resolved "https://registry.yarnpkg.com/@vuejs-community/vue-filter-date-parse/-/vue-filter-date-parse-1.2.0.tgz#6528ddf7cc6b01a708d9ed45d5cb01b10e8f7264"
   integrity sha512-428XND/lS1vTyrWU++Laiebu7hu2jspE/SZHNNoM4IqFN8Wey2OtKLPE3LrBDQ1ixT4w6Zrs94ai3NwkNNgAfg==
@@ -10286,9 +10286,9 @@ range-parser@^1.2.1, range-parser@~1.2.1:
   resolved "https://registry.yarnpkg.com/range-parser/-/range-parser-1.2.1.tgz#3cf37023d199e1c24d1a55b84800c2f3e6468031"
   integrity sha512-Hrgsx+orqoygnmhFbKaHE6c296J+HTAQXoxEF6gNupROmmGJRoyzfG3ccAveqCBrwr/2yxQ5BVd/GTl5agOwSg==
 
-"raphael@git+https://github.com/nhn/raphael.git#2.2.0-c":
+"raphael@https://github.com/nhn/raphael.git#2.2.0-c":
   version "2.2.0-c"
-  resolved "git+https://github.com/nhn/raphael.git#78a6ed3ec269f33b6457b0ec66f8c3d1f2ed70e0"
+  resolved "https://github.com/nhn/raphael.git#78a6ed3ec269f33b6457b0ec66f8c3d1f2ed70e0"
   dependencies:
     eve "git://github.com/adobe-webplatform/eve.git#eef80ed"
 
@@ -12367,7 +12367,12 @@ vuetify-loader@^1.7.3:
     file-loader "^6.2.0"
     loader-utils "^2.0.0"
 
-vuetify@^2.*, vuetify@^2.6:
+vuetify@^2.*:
+  version "2.7.2"
+  resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-2.7.2.tgz#b2b687e519257d789a63b87c418f98099f38990f"
+  integrity sha512-qr04ww7uzAPQbpk751x4fSdjsJ+zREzjQ/rBlcQGuWS6MIMFMXcXcwvp4+/tnGsULZxPMWfQ0kmZmg5Yc/XzgQ==
+
+vuetify@^2.6:
   version "2.7.1"
   resolved "https://registry.yarnpkg.com/vuetify/-/vuetify-2.7.1.tgz#49fc4d460ecfb51ed40d5befff779ceabf4f5a03"
   integrity sha512-DVFmRsDtYrITw9yuGLwpFWngFYzEgk0KwloDCIV3+vhZw+NBFJOSzdbttbYmOwtqvQlhDxUyIRQolrRbSFAKlg==

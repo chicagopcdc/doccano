@@ -1,7 +1,7 @@
 <template>
   <v-toolbar class="toolbar-control" dense flat>
     <v-row no-gutters>
-      <v-btn-toggle>
+      <v-btn-group>
         <button-review :is-reviewd="isReviewd" @click:review="$emit('click:review')" />
 
         <button-filter :value="filterOption" @click:filter="changeFilter" />
@@ -43,7 +43,7 @@
         <v-dialog v-model="dialogShortcut">
           <form-keyboard-shortcut @click:close="dialogShortcut = false" />
         </v-dialog>
-      </v-btn-toggle>
+      </v-btn-group>
       <slot />
       <v-spacer />
       <button-pagination
