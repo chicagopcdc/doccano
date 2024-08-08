@@ -1,6 +1,6 @@
 import datetime
 import os
-from django.shortcuts import get_object_or_404, render
+
 import requests
 from celery.result import AsyncResult
 from django.http import FileResponse
@@ -10,10 +10,11 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from .celery_tasks import export_dataset
-from .pipeline.catalog import Options
 from projects.models import Project
 from projects.permissions import IsProjectAdmin
+
+from .celery_tasks import export_dataset, export_example
+from .pipeline.catalog import Options
 
 
 class DatasetCatalog(APIView):
@@ -44,29 +45,59 @@ class DatasetExportAPI(APIView):
         file_format = request.data.pop("format")
         export_approved = request.data.pop("exportApproved", False)
         task = export_dataset.delay(
-            project_id=project_id, file_format=file_format, confirmed_only=export_approved, **request.data
+            project_id=project_id,
+            file_format=file_format,
+            confirmed_only=export_approved,
+            **request.data,
         )
         return Response({"task_id": task.task_id})
 
+
 class DatasetToGearbox(APIView):
     permission_classes = [IsAuthenticated & IsProjectAdmin]
+
     def post(self, request, *args, **kwargs):
+        """
+        Handles the POST request to create a task and export the specified document to GEARBOX_URL.
+
+        Args:
+            request (Request): The HTTP request object.
+            args (tuple): Positional arguments.
+            kwargs (dict): Keyword arguments.
+
+        Returns:
+            Response: The HTTP response object.
+
+        Raises:
+            Exception: If an error occurs during the export process.
+
+        """
         # Create task
         project_id = self.kwargs["project_id"]
+        document_id = request.data.pop("docId")
         file_format = request.data.pop("format")
         export_approved = request.data.pop("exportApproved", False)
-        task = export_dataset.delay(
-            project_id=project_id, file_format=file_format, confirmed_only=export_approved, **request.data
+        task = export_example.delay(
+            project_id=project_id,
+            document_id=document_id,
+            file_format=file_format,
+            confirmed_only=export_approved,
+            **request.data,
         )
-        export_filename = AsyncResult(task.task_id).get()
+
+        try:
+            export_filename = AsyncResult(task.task_id).get(timeout=None, propagate=True)
+        except Exception as e:
+            return Response({"status_code": False, "exception": e.args[0]})
         # Get GEARBOX_URL from the environment
         GEARBOX_URL = os.getenv("GEARBOX_URL")
         status_code = None
         response = None
-        with open(export_filename, 'rb') as f:
-            filename = f"doccano_export_{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.zip"
+        with open(export_filename, "rb") as f:
+            filename = (
+                f"doccano_export_{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.zip"
+            )
             file = {"zip_file": (filename, f, "application/zip")}
-            # Send file to Gearbox
             response = requests.post(GEARBOX_URL, files=file, timeout=15)
         status_code = response.ok
         return Response({"status_code": status_code})

@@ -2,7 +2,7 @@
   <v-toolbar class="toolbar-control" dense flat>
     <v-row no-gutters>
       <v-btn-group>
-        <button-review :is-reviewd="isReviewd" @click:review="$emit('click:review')" />
+        <button-review :is-reviewd="isReviewd" :doc-id="docId"  @click:review="$emit('click:review')"/>
 
         <button-filter :value="filterOption" @click:filter="changeFilter" />
 

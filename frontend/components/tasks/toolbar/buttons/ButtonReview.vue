@@ -38,6 +38,10 @@ export default Vue.extend({
       default: false,
       required: true
     },
+    docId: {
+      type: Number,
+      required: true
+    },
     requestSent: {
       type: Boolean,
       default: false
@@ -54,7 +58,7 @@ export default Vue.extend({
       polling: null,
       selectedFormat: "JSONL",
       taskId: '',
-      valid: false
+      valid: false,
     }
   },
 
@@ -91,6 +95,7 @@ export default Vue.extend({
       this.isProcessing = true
       const response = await this.$repositories.download.callGearboxAPI(
         this.projectId,
+        this.docId,
         this.selectedFormat,
         this.exportApproved
       )
