@@ -193,15 +193,16 @@ For help and feedback, feel free to contact [the author](https://github.com/Hiro
 
 
 ## Build your own container
-docker build --no-cache --progress=plain -t doccano:20230911 ./docker/docker-frontend/  &> build.log
+from root dir `doccano/` run 
+- `docker build --no-cache --progress=plain --file ./docker/Dockerfile.prod --platform=linux/amd64 -t doccano:be_20240813 ./`
+- `docker build --no-cache --progress=plain --file ./docker/Dockerfile.nginx --platform=linux/amd64 -t doccano:fe_20240813 ./`
 
 
+test:
+`docker build --no-cache --progress=plain -t doccano:20230911 ./docker/docker-frontend/  &> build.log`
 
-from main doccano root directory:
-- docker build --no-cache --progress=plain --file ./docker/Dockerfile.nginx --platform=linux/amd64 -t doccano:fe_20240813 ./
 
-- docker build --no-cache --progress=plain --file ./docker/Dockerfile.prod --platform=linux/amd64 -t doccano:be_20240813 ./
-
+## Run in Docker compose
 from the `/` root forder:
 - sudo docker-compose -f docker/docker-compose.prod.yml ps
 - sudo docker-compose -f docker/docker-compose.prod.yml up -d
@@ -221,10 +222,10 @@ Doing this in us-east-1 - Virginia and used the base name `doccano`, so for inst
 - Add instance/s to the target group
 - Update SSL Cert and listeners
 
-### Create Secrets
-- add useful secrets to secrets manager and pull them from the userdata script
+### Populate Secrets needed by the EC2
+- add useful secrets to secrets manager:
   - quay_io_creds (quay.io login creds)
-  - doccano_creds (all the information needed in the .env file)
+  - doccano_creds (all the information needed in the .env file, mostly doccano and DB credentials)
 
 ### Create VPC
 Select the following options:
@@ -253,11 +254,6 @@ Select the following options:
 - select `doccano-alb-sg` security group as well as the VPC `default` (the default will allow full connectivity between the EC2 and the ALB)
 - listeners: listen to 443 (set 80 if you don't have a certificate already and you can update later) and forward to target group created previously (may need to refresh the page for it to show up)
 - click on create
-
-### Populate Secrets needed by the EC2
-add useful secrets to secrets manager:
-- quay_io_creds (quay.io login creds)
-- doccano_creds (doccano credentials)
 
 ### Create EC2 instance
 - name= doccano-ec2-20240813-1, Amazon Linux 2023 AMI, t3.medium
@@ -295,6 +291,7 @@ TODO: migrate to RDS or something similar
 ./docker-volumes.sh docker-backend-1 save backend-volumes.tar
 ./docker-volumes.sh docker-nginx-1 save frontend-volumes.tar
 
+need to run the following on the VM SSHing from a VM in the public subnet
 ./docker-volumes.sh docker-postgres-1 load postgres-volumes.tar
 ./docker-volumes.sh docker-postgres-1 load postgres-volumes.tar
 ./docker-volumes.sh docker-postgres-1 load postgres-volumes.tar
