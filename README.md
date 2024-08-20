@@ -195,10 +195,12 @@ For help and feedback, feel free to contact [the author](https://github.com/Hiro
 ## Build your own container
 docker build --no-cache --progress=plain -t doccano:20230911 ./docker/docker-frontend/  &> build.log
 
-from main doccano root directory:
-- docker build --no-cache --progress=plain --file ./docker/Dockerfile.nginx -t doccano:fe_20240307 ./
 
-- docker build --no-cache --progress=plain --file ./docker/Dockerfile.prod -t doccano:be_20240307 ./
+
+from main doccano root directory:
+- docker build --no-cache --progress=plain --file ./docker/Dockerfile.nginx --platform=linux/amd64 -t doccano:fe_20240813 ./
+
+- docker build --no-cache --progress=plain --file ./docker/Dockerfile.prod --platform=linux/amd64 -t doccano:be_20240813 ./
 
 from the `/` root forder:
 - sudo docker-compose -f docker/docker-compose.prod.yml ps
@@ -206,35 +208,110 @@ from the `/` root forder:
 - docker-compose -f docker/docker-compose.prod.yml --env-file .env up (not tried yet)
 
 
-## Run the container on EC2 AWS AMI with SSL cert
-- get a cert from certificate manager for the ALB
-- update the DNS provider with the CNAME
+## CREATE AWS ENVIRONMENT:
+Doing this in us-east-1 - Virginia and used the base name `doccano`, so for instance `doccano-vpc`, `doccano-sg` etc etc
 
+- Create Secrets
+- Create VPC
+- Create Security Group for ALB
+- Create Target Group
+- Create ALB
+- Populate Secrets needed by the EC2
+- Create EC2 instance
+- Add instance/s to the target group
+- Update SSL Cert and listeners
+
+### Create Secrets
 - add useful secrets to secrets manager and pull them from the userdata script
   - quay_io_creds (quay.io login creds)
   - doccano_creds (all the information needed in the .env file)
 
-- create a security group allowing only 80 and 22. (this will be for every ec2 inside the target group for the alb) 
-  - TODO SSH can be restricted to UChicago IPS and 80 to the load balancer
-- add ec2_secrets_manager_role ( or create it if not created previously. Give EC2 read permission on the secrets manager)
-- create an EC2 with no public IP. Assign to it the previously creted security group, role, and the ec2_user_data.sh script.
+### Create VPC
+Select the following options:
+- VPC and more
+- pick your CIDR block and name (`doccano-vpc`)
+- 2 availbiulity zones, 2 private, 2 public subnets
+- only 1 nat gateway (in 1 availability zone. We are going to deploy only in that one zone since this application doesn't need to be fault tollerant and can have some downtime. We create 2 so it will be easier to add eventually a second nat gateway down the line if we decide to.)
+- Leave the other options as they are
 
+### Create Security Group for ALB
+- `doccano-alb-sg`
+- select `doccano-vpc`
+- create security group for ALB listen to all from 80 and 443
+- Maybe restrict to UChicago IPs for now?
 
-- create security group for ALB list to all from 80 and 443
-- create target group for ALB (protocol 80, http1, health check: /api/v0/_status) and add the ec2 created previously
+### Create Target Group
+- create target group for ALB (type instances, name `doccano-target-group`, protocol 80, http1, health check: /) 
+- Create button, add instances later
+
+### Create ALB
+- name (`doccano-alb`)
+- internet facing
+- ipv4
+- select `doccano-vpc`
+- select the two availability zones and the 2 puvlic subnets for the ALB
+- select `doccano-alb-sg` security group as well as the VPC `default` (the default will allow full connectivity between the EC2 and the ALB)
+- listeners: listen to 443 (set 80 if you don't have a certificate already and you can update later) and forward to target group created previously (may need to refresh the page for it to show up)
+- click on create
+
+### Populate Secrets needed by the EC2
+add useful secrets to secrets manager:
+- quay_io_creds (quay.io login creds)
+- doccano_creds (doccano credentials)
+
+### Create EC2 instance
+- name= doccano-ec2-20240813-1, Amazon Linux 2023 AMI, t3.medium
+- select key pair
+- select doccano VPC, private subnet
+- No public IP, existing security group 'default' for the doccano VPC
+- 40gb gp3
+-  previously created role ec2_secrets_manager_role ( or create it if not created previously. Give EC2 read permission on the secrets manager with policy SecretsManagerReadWrite and trust relationship to EC2, as well as CloudWatchLogsFullAccess to push the docker logs to cloudwatch) as instance profile. 
+- update ec2_user_data.sh script
+- click on create
+
+### Add instance/s to the target group
+and add the ec2 created previously
   - For some reason if the instance is only internal it will now turn healthy in the target group. You can just attach a public IP, wait 2/3 minutes for it to turn healthy and then you can remove the elastic IP. That seems to be solving the issue. (TRY added ALB's security group on port 80 in EC2's security group. By doing this, the issue will be resolved.)
-- create ALB
-  - select previously created security group
-  - listen to 443 and forward to target group created previously
-  - add certificate created previously
-- After creation add listener to listen to 80 and redirect (redirect to url) 301 to 443
-  
 
-## Debugging
-### create an EC2 with public IP in the same subnet and SSH from there, then kill the EC2
-### forward the logs to cloudwatch and look at cloudwatch
-### Create elastic IP and attach it to the instance, then remove once you are done
+### Update SSL Cert and listeners
+- get a cert from certificate manager for the ALB
+- update the DNS provider with the CNAME of the ALB
+- add certificate to the HTTPS 443 listener in the ALB and point to the target group
+- add listener to listen to 80 and redirect (redirect to url) 301 to 443 - Redirect to HTTPS://#{host}:443/#{path}?#{query}
+
+### Deploy new version
+- Update the ec2_user_data.sh file with the new tag
+- Repeat the step `Create EC2 instance`
+- Repeat the step `Add instance/s to the target group`
+- Remove old instance from the target group
+- Terminate old instance
+
+
+### Migrate the DB
+TODO: migrate to RDS or something similar
+- migrate the volumes https://github.com/ricardobranco777/docker-volumes.sh/blob/master/README.md (postgres_data:, static_volume:, media:, tmp_file:)
+```
+./docker-volumes.sh docker-postgres-1 save postgres-volumes.tar
+./docker-volumes.sh docker-backend-1 save backend-volumes.tar
+./docker-volumes.sh docker-nginx-1 save frontend-volumes.tar
+
+./docker-volumes.sh docker-postgres-1 load postgres-volumes.tar
+./docker-volumes.sh docker-postgres-1 load postgres-volumes.tar
+./docker-volumes.sh docker-postgres-1 load postgres-volumes.tar
+
+restart docker-compose down and up
+```
+- Or dump and load the DB
+```
+docker exec -it docker-postgres-1 pg_dumpall -c -U doccano > ~/20240814_doccano_backup.sql
+scp -i "gearbox-dev.pem" ec2-user@ec2-52-21-113-45.compute-1.amazonaws.com:~/20200814_doccano_backup.sql ./ (from a VM in the public subnet)
+run the pg_extract ( https://thomasbandt.com/postgres-docker-major-version-upgrade )
+cat 20240814_doccano_backup_edit.sql | docker exec -i docker-postgres-1 psql -U doccano
+docker stop docker-postgres-1
+```
+
+- Run `ALTER USER doccano WITH PASSWORD 'F5Ghter$34!';` otherwise the backend application won't be able to connect because the old .env file didn't contain " for the password
 
 
 
-https://github.com/ricardobranco777/docker-volumes.sh/tree/master
+
