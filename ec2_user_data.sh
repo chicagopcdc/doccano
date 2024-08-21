@@ -11,7 +11,7 @@ sudo chmod +x /usr/local/bin/docker-compose
 # sudo ln -s /usr/local/bin/docker-compose /usr/bin/docker-compose
 git clone https://github.com/chicagopcdc/doccano.git
 cd doccano/
-git checkout -t origin/master
+git checkout -t origin/pcdc_dev
 
 #define parameters which are passed in.
 doccano_secrets_str=$(aws secretsmanager get-secret-value --secret-id doccano_creds)
