@@ -2,7 +2,7 @@ version: "3.7"
 services:
 
   backend:
-    image: quay.io/pcdc/doccano:be_20240307
+    image: quay.io/pcdc/doccano:be_20240813
     volumes:
       - static_volume:/backend/staticfiles
       - media:/backend/media
@@ -23,7 +23,7 @@ services:
       - network-frontend
 
   celery:
-    image: quay.io/pcdc/doccano:be_20240307
+    image: quay.io/pcdc/doccano:be_20240813
     volumes:
       - media:/backend/media
       - tmp_file:/backend/filepond-temp-uploads
@@ -40,7 +40,7 @@ services:
       - network-backend
 
   flower:
-    image: quay.io/pcdc/doccano:be_20240307
+    image: quay.io/pcdc/doccano:be_20240813
     entrypoint: ["/opt/bin/prod-flower.sh"]
     environment:
       PYTHONUNBUFFERED: "1"
@@ -67,7 +67,7 @@ services:
       - network-backend
 
   nginx:
-    image: quay.io/pcdc/doccano:fe_20240307
+    image: quay.io/pcdc/doccano:fe_20240813
     command: >
       /bin/sh -c
       "envsubst '
