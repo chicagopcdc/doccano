@@ -20,6 +20,11 @@ ADMIN_PASSWORD="$(echo $doccano_secrets | jq -r '.ADMIN_PASSWORD')"
 RABBITMQ_DEFAULT_PASS="$(echo $doccano_secrets | jq -r '.RABBITMQ_DEFAULT_PASS')"
 POSTGRES_PASSWORD="$(echo $doccano_secrets | jq -r '.POSTGRES_PASSWORD')"
 FLOWER_BASIC_AUTH="$(echo $doccano_secrets | jq '.FLOWER_BASIC_AUTH')"
+POSTGRES_HOST="$(echo $doccano_secrets | jq '.POSTGRES_HOST')"
+
+ENCODED_POSTGRES_PASSWORD=$(jq -rn --arg pwd $POSTGRES_PASSWORD '$pwd|@uri')
+
+
 
 #define the template.
 env_file=$(cat  << EOF
@@ -33,9 +38,10 @@ RABBITMQ_DEFAULT_USER=doccano
 RABBITMQ_DEFAULT_PASS='$RABBITMQ_DEFAULT_PASS'
 
 # database settings
+POSTGRES_HOST='$POSTGRES_HOST'
 POSTGRES_USER=doccano
-POSTGRES_PASSWORD='$POSTGRES_PASSWORD'
-POSTGRES_DB=doccano
+POSTGRES_PASSWORD='$ENCODED_POSTGRES_PASSWORD'
+POSTGRES_DB=postgres
 
 # Flower settings
 FLOWER_BASIC_AUTH='$FLOWER_BASIC_AUTH'
