@@ -20,7 +20,7 @@ ADMIN_PASSWORD="$(echo $doccano_secrets | jq -r '.ADMIN_PASSWORD')"
 RABBITMQ_DEFAULT_PASS="$(echo $doccano_secrets | jq -r '.RABBITMQ_DEFAULT_PASS')"
 POSTGRES_PASSWORD="$(echo $doccano_secrets | jq -r '.POSTGRES_PASSWORD')"
 FLOWER_BASIC_AUTH="$(echo $doccano_secrets | jq -r '.FLOWER_BASIC_AUTH')"
-POSTGRES_HOST="$(echo $doccano_secrets | jq -r'.POSTGRES_HOST')"
+POSTGRES_HOST="$(echo $doccano_secrets | jq -r '.POSTGRES_HOST')"
 
 ENCODED_POSTGRES_PASSWORD=$(jq -rn --arg pwd $POSTGRES_PASSWORD '$pwd|@uri')
 
