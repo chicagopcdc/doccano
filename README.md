@@ -217,6 +217,7 @@ Doing this in us-east-1 - Virginia and used the base name `doccano`, so for inst
 - Create Security Group for ALB
 - Create Target Group
 - Create ALB
+- Create RDS
 - Populate Secrets needed by the EC2
 - Create EC2 instance
 - Add instance/s to the target group
@@ -255,6 +256,21 @@ Select the following options:
 - listeners: listen to 443 (set 80 if you don't have a certificate already and you can update later) and forward to target group created previously (may need to refresh the page for it to show up)
 - click on create
 
+### Create RDS psql instance
+- psql
+- 13.13
+- production
+- single db
+- identifier: `doccano`
+- master username: `doccano`
+- secrets manager
+- t3.small
+- 100 Gi
+- doccano vpc
+- force to create a new DB subnet group
+- doccano vpc default sec group
+- 
+
 ### Create EC2 instance
 - name= doccano-ec2-20240813-1, Amazon Linux 2023 AMI, t3.medium
 - select key pair
@@ -281,34 +297,4 @@ and add the ec2 created previously
 - Repeat the step `Add instance/s to the target group`
 - Remove old instance from the target group
 - Terminate old instance
-
-
-### Migrate the DB
-TODO: migrate to RDS or something similar
-- migrate the volumes https://github.com/ricardobranco777/docker-volumes.sh/blob/master/README.md (postgres_data:, static_volume:, media:, tmp_file:)
-```
-./docker-volumes.sh docker-postgres-1 save postgres-volumes.tar
-./docker-volumes.sh docker-backend-1 save backend-volumes.tar
-./docker-volumes.sh docker-nginx-1 save frontend-volumes.tar
-
-need to run the following on the VM SSHing from a VM in the public subnet
-./docker-volumes.sh docker-postgres-1 load postgres-volumes.tar
-./docker-volumes.sh docker-postgres-1 load postgres-volumes.tar
-./docker-volumes.sh docker-postgres-1 load postgres-volumes.tar
-
-restart docker-compose down and up
-```
-- Or dump and load the DB
-```
-docker exec -it docker-postgres-1 pg_dumpall -c -U doccano > ~/20240814_doccano_backup.sql
-scp -i "gearbox-dev.pem" ec2-user@ec2-52-21-113-45.compute-1.amazonaws.com:~/20200814_doccano_backup.sql ./ (from a VM in the public subnet)
-run the pg_extract ( https://thomasbandt.com/postgres-docker-major-version-upgrade )
-cat 20240814_doccano_backup_edit.sql | docker exec -i docker-postgres-1 psql -U doccano
-docker stop docker-postgres-1
-```
-
-- Run `ALTER USER doccano WITH PASSWORD 'F5Ghter$34!';` otherwise the backend application won't be able to connect because the old .env file didn't contain " for the password
-
-
-
 
