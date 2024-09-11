@@ -1,6 +1,7 @@
 export default {
   checkedTooltip: 'Checked',
   notCheckedTooltip: 'Not Checked',
+  pushChanges: 'Push Changes',
   selectFilterTooltip: 'Select a Filter',
   filterOption1: 'All',
   filterOption2: 'Done',
