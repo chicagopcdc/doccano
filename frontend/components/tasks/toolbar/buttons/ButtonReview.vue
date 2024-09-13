@@ -13,8 +13,8 @@
         </v-icon>
       </v-btn>
     </template>
-    <span v-if="isReviewd">{{ $t('annotation.pushChanges') }}</span>
-    <span v-else>{{ $t('annotation.pushChanges') }}</span>
+    <span v-if="isReviewd">{{ $t('annotation.checkedTooltip') }}</span>
+    <span v-else>{{ $t('annotation.notCheckedTooltip') }}</span>
   </v-tooltip>
 </template>
 
