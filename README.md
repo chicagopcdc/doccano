@@ -298,3 +298,7 @@ and add the ec2 created previously
 - Remove old instance from the target group
 - Terminate old instance
 
+
+# Debug psql and install on machine when ssh from bastion host
+- sudo dnf search postgresql
+- sudo dnf install -y postgresql15
