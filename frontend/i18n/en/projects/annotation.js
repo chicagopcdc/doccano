@@ -1,6 +1,6 @@
 export default {
-  checkedTooltip: 'Checked',
-  notCheckedTooltip: 'Not Checked',
+  checkedTooltip: 'Upload Data',
+  notCheckedTooltip: 'Not Uploaded',
   selectFilterTooltip: 'Select a Filter',
   filterOption1: 'All',
   filterOption2: 'Done',
