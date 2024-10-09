@@ -93,11 +93,12 @@ class DatasetToGearbox(APIView):
         GEARBOX_URL = os.getenv("GEARBOX_URL")
         status_code = None
         response = None
-        with open(export_filename, "rb") as f:
-            filename = (
-                f"doccano_export_{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.zip"
-            )
-            file = {"zip_file": (filename, f, "application/zip")}
-            response = requests.post(GEARBOX_URL, files=file, timeout=15)
+
+        filename = (
+        	f"doccano_export_{datetime.datetime.now().strftime('%Y%m%d-%H%M%S')}.zip"
+        )
+       	files = {"file": (filename, open(export_filename, "rb"), "application/zip")} 
+        response = requests.post(GEARBOX_URL, files=files, timeout=15)
+
         status_code = response.ok
         return Response({"status_code": status_code})
