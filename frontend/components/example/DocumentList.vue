@@ -36,12 +36,16 @@
         </v-chip>
       </template>
       <template #[`item.text`]="{ item }">
-        <span class="document-text d-flex">{{ item.text | truncate(200) }}</span>
+        <span class="d-none d-sm-flex document-text">{{ item.text | truncate(200) }}</span>
+        <span class="d-flex d-sm-none document-text">{{ item.text | truncate(50) }}</span>
       </template>
       <template #[`item.meta`]="{ item }">
-        <div class="document-text d-flex flex-column">
+        <div class="d-flex flex-column document-text">
           <span class="d-none d-sm-flex">
             {{ JSON.stringify(item.meta, null, 4) | truncate(200) }}
+          </span>
+          <span class="d-flex d-sm-none">
+            {{ JSON.stringify(item.meta, null, 4) | truncate(50) }}
           </span>
           <template v-if="JSON.stringify(item.meta, null, 4).length >= 200">
             <v-btn
