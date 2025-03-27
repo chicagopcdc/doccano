@@ -19,6 +19,7 @@
       @contextmenu:relation="deleteRelation"
     />
     <labeling-menu
+      v-if="entityMenuOpened"
       :opened="entityMenuOpened"
       :x="x"
       :y="y"
@@ -28,6 +29,7 @@
       @click:label="addOrUpdateEntity"
     />
     <labeling-menu
+      v-if="relationMenuOpened"
       :opened="relationMenuOpened"
       :x="x"
       :y="y"
