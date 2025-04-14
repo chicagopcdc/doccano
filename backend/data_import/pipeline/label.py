@@ -81,10 +81,16 @@ class SpanLabel(Label):
     def parse(cls, example_uuid: UUID4, obj: Any):
         if isinstance(obj, list) or isinstance(obj, tuple):
             columns = ["start_offset", "end_offset", "label", "meta"]
-            obj = zip(columns, obj)
-            return cls(example_uuid=example_uuid, **dict(obj))
+            obj = dict(zip(columns, obj))
+            if "meta" in obj:
+                return cls(example_uuid=example_uuid, **obj)
+            else:
+                return cls(example_uuid=example_uuid, **dict(obj, meta={}))
         elif isinstance(obj, dict):
-            return cls(example_uuid=example_uuid, **obj)
+            if "meta" in obj:
+                return cls(example_uuid=example_uuid, **obj)
+            else:
+                return cls(example_uuid=example_uuid, **dict(obj, meta={}))
         raise ValueError("SpanLabel.parse()")
 
     def create_type(self, project: Project) -> Optional[LabelType]:

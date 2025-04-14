@@ -12,7 +12,7 @@
 <script>
 import '@/assets/style/editor.css'
 import { Editor } from '@toast-ui/vue-editor'
-import '@toast-ui/editor/dist/toastui-editor.css';
+import '@toast-ui/editor/dist/toastui-editor.css'
 import 'codemirror/lib/codemirror.css'
 import _ from 'lodash'
 

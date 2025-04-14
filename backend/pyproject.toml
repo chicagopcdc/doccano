@@ -53,7 +53,7 @@ whitenoise = "^6.0.0"
 dj-database-url = "^0.5.0"
 pyexcel-xlsx = "^0.6.0"
 gunicorn = "^23.0.0"
-auto-labeling-pipeline = "^0.1.21"
+auto-labeling-pipeline = "^0.1.23"
 dj-rest-auth = {extras = ["with_social"], version = "^2.2.5"}
 django-drf-filepond = "^0.5.0"
 celery = "^5.2.3"

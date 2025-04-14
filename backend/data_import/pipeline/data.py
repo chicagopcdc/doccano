@@ -70,3 +70,6 @@ class BinaryData(BaseData):
             text=None,
             meta=self.meta,
         )
+
+    def update(self, project: Project) -> None:
+        return None
