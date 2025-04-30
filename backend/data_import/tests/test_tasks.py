@@ -316,6 +316,7 @@ class TestImportImageClassificationData(TestImportData):
         filename = "images/1500x500.jpeg"
         file_format = "ImageFile"
         self.import_dataset(filename, file_format, self.task)
+        print(Example.objects.first())
         self.assertEqual(Example.objects.count(), 1)
 
 
