@@ -98,7 +98,10 @@ class BinaryDataset(Dataset):
     def save(self, user: User, batch_size: int = 1000):
         for records in self.reader.batch(batch_size):
             examples = Examples(self.example_maker.make(records))
+            print("BINARY EXAMPLES")
+            print(examples)
             examples.save()
+            print(examples)
 
     @property
     def errors(self) -> List[FileParseException]:
