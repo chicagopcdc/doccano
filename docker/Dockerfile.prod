@@ -17,12 +17,13 @@ WORKDIR /tmp
 COPY backend/pyproject.toml backend/poetry.lock /tmp/
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN pip install -U --no-cache-dir pip==22.2.2 \
- && curl -sSL https://install.python-poetry.org | python - \
- && export PATH="/root/.local/bin:$PATH" \
- && poetry export --without-hashes -o /requirements.txt \
- && echo "psycopg2-binary==2.8.6" >> /requirements.txt \
- && pip install --no-cache-dir -r /requirements.txt
+ENV POETRY_VERSION=1.8.4
+RUN pip install -U --no-cache-dir pip==22.2.2
+RUN curl -sSL https://install.python-poetry.org | python - || (echo "Poetry install failed" && find /tmp -name 'poetry-installer-error-*.log' -exec cat {} \;)
+ENV PATH="/root/.local/bin:$PATH"
+RUN poetry export --without-hashes -o /requirements.txt
+RUN echo "psycopg2-binary==2.8.6" >> /requirements.txt
+RUN pip install --no-cache-dir -r /requirements.txt
 
 FROM python:${PYTHON_VERSION} AS runtime
 
@@ -50,8 +51,8 @@ RUN mkdir -p /backend/staticfiles \
   && mkdir -p /backend/filepond-temp-uploads \
   && chown -R doccano:doccano /backend/
 
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
 USER doccano:doccano
 VOLUME /backend/staticfiles
 
