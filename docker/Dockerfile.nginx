@@ -1,5 +1,5 @@
 ARG NODE_VERSION="16_16_bullseye_slim"
-FROM quay.io/pcdc/node:${NODE_VERSION} AS frontend-builder
+FROM node:20.19-bullseye-slim AS frontend-builder
 
 COPY frontend/ /app/
 WORKDIR /app
