@@ -11,11 +11,11 @@ variable "app_name" {
 }
 
 variable "private_subnet_ids" {
-  default = ["subnet-02daaea0d231975df", "subnet-0c7f4570d0c82bdc3"]
+  default = ["subnet-013e8d4a439201a84", "subnet-0025d9b857876f8a5"]
 }
 
 variable "vpc_id" {
-  default = "vpc-0e20603ab3c8dd65e"
+  default = "vpc-0ab59a594548de1b9" #doccano dev vpc
 }
 
 variable "efs_sg_id" {

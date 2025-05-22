@@ -9,7 +9,7 @@ module "doccano_ecs" {
   vpc_id = var.vpc_id
   target_group_arn = module.doccano_alb.doccano_target_group.arn
   container_name = "nginx"
-  container_count = 2
+  # container_count = 2
   efs_volume = module.doccano_efs.aws_efs_file_system
   aws_efs_access_point_static_files = module.doccano_efs.access_point_id_static_files
   efs_access_point_id_media = module.doccano_efs.access_point_id_media
