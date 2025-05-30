@@ -2,8 +2,8 @@ resource "aws_lb" "doccano_lb" {
   name               = "doccano-lb-${var.environment}"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.lb.id] #[aws_security_group.lb.id]
-  subnets            = var.subnet_ids #["subnet-02daaea0d231975df", "subnet-0c7f4570d0c82bdc3"]
+  security_groups    = [aws_security_group.lb.id]
+  subnets            = var.subnet_ids
 }
 
 resource "aws_lb_listener" "http" {
@@ -33,7 +33,7 @@ resource "aws_lb_target_group" "doccano_target_group" {
   }
 }
 
-# ALB security Group: Edit to restrict access to the application
+# ALB security Group: Need to add 443, once we get DNS domain hosted zone
 resource "aws_security_group" "lb" {
   name        = "doccano-lb-security-group"
   description = "controls access to the ALB"

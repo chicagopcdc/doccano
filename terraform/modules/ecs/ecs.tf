@@ -12,7 +12,7 @@ resource "aws_ecs_service" "doccano_service" {
     assign_public_ip = true
   }
 
-  load_balancer  {
+  load_balancer {
     target_group_arn = var.target_group_arn
     container_name   = var.container_name
     container_port   = var.container_port
@@ -33,11 +33,11 @@ resource "aws_ecs_task_definition" "doccano" {
   volume {
     name = "static-volume"
     efs_volume_configuration {
-      file_system_id     = var.efs_volume
+      file_system_id = var.efs_volume
       root_directory = "/"
       authorization_config {
-        access_point_id = var.aws_efs_access_point_static_files
-        iam = "ENABLED"
+        access_point_id = var.efs_access_point_static_files
+        iam             = "ENABLED"
       }
       transit_encryption = "ENABLED"
     }
@@ -45,11 +45,11 @@ resource "aws_ecs_task_definition" "doccano" {
   volume {
     name = "media-volume"
     efs_volume_configuration {
-      file_system_id     = var.efs_volume
+      file_system_id = var.efs_volume
       root_directory = "/"
       authorization_config {
         access_point_id = var.efs_access_point_id_media
-        iam = "ENABLED"
+        iam             = "ENABLED"
       }
       transit_encryption = "ENABLED"
     }
@@ -57,19 +57,19 @@ resource "aws_ecs_task_definition" "doccano" {
   volume {
     name = "tmp-volume"
     efs_volume_configuration {
-      file_system_id     = var.efs_volume
+      file_system_id = var.efs_volume
       root_directory = "/"
       authorization_config {
         access_point_id = var.efs_access_point_id_tmp
-        iam = "ENABLED"
+        iam             = "ENABLED"
       }
       transit_encryption = "ENABLED"
     }
   }
   container_definitions = jsonencode([
     {
-      name  = "doccano"
-      image = "quay.io/pcdc/doccano:be_20240813"
+      name      = "doccano"
+      image     = "quay.io/pcdc/doccano:be_20240813"
       essential = true
       mountPoints = [
         {
@@ -101,7 +101,7 @@ resource "aws_ecs_task_definition" "doccano" {
         name  = "DJANGO_SETTINGS_MODULE"
         value = "config.settings.production"
         }, {
-        name      = "CELERY_BROKER_URL"
+        name  = "CELERY_BROKER_URL"
         value = aws_ssm_parameter.CELERY_BROKER_URL.value
         }
       ]
@@ -123,8 +123,8 @@ resource "aws_ecs_task_definition" "doccano" {
       ]
     },
     {
-      name  = "celery"
-      image = "quay.io/pcdc/doccano:be_20240813"
+      name       = "celery"
+      image      = "quay.io/pcdc/doccano:be_20240813"
       essential  = true
       entryPoint = ["/opt/bin/prod-celery.sh"]
       mountPoints = [
@@ -132,7 +132,7 @@ resource "aws_ecs_task_definition" "doccano" {
           sourceVolume  = "media-volume"
           containerPath = "/backend/media"
         },
-       {
+        {
           sourceVolume  = "tmp-volume"
           containerPath = "/backend/filepond-temp-uploads"
         }
@@ -172,8 +172,8 @@ resource "aws_ecs_task_definition" "doccano" {
       ]
     },
     {
-      name  = "flower"
-      image = "quay.io/pcdc/doccano:be_20240813"
+      name       = "flower"
+      image      = "quay.io/pcdc/doccano:be_20240813"
       essential  = true
       entryPoint = ["/opt/bin/prod-flower.sh"]
       portMappings = [
@@ -213,7 +213,7 @@ resource "aws_ecs_task_definition" "doccano" {
         }, {
         name      = "DATABASE_URL"
         valueFrom = var.database_url
-        }, 
+        },
         {
           name      = "FLOWER_BASIC_AUTH"
           valueFrom = aws_ssm_parameter.FLOWER_BASIC_AUTH.arn
@@ -221,8 +221,8 @@ resource "aws_ecs_task_definition" "doccano" {
       ]
     },
     {
-      name  = "rabbitmq"
-      image = "rabbitmq:3.10.7-alpine"
+      name      = "rabbitmq"
+      image     = "rabbitmq:3.10.7-alpine"
       essential = true
       portMappings = [
         {
@@ -249,8 +249,8 @@ resource "aws_ecs_task_definition" "doccano" {
       ]
     },
     {
-      name  = "nginx"
-      image = "954006452010.dkr.ecr.us-east-1.amazonaws.com/doccano-nginx:latest" #"quay.io/pcdc/doccano:fe_20240813"
+      name       = "nginx"
+      image      = "954006452010.dkr.ecr.us-east-1.amazonaws.com/doccano-nginx:latest" #"quay.io/pcdc/doccano:fe_20240813"
       essential  = true
       entryPoint = ["/bin/sh", "-c"]
       command    = ["envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]

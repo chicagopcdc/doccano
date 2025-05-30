@@ -17,7 +17,7 @@ variable "container_port" {
   default = 8080
 }
 
-variable "aws_efs_access_point_static_files" { 
+variable "efs_access_point_static_files" {
 }
 
 variable "efs_access_point_id_media" {
