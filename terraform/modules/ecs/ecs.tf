@@ -24,8 +24,8 @@ resource "aws_ecs_service" "doccano_service" {
 resource "aws_ecs_task_definition" "doccano" {
   family                   = "doccano"
   requires_compatibilities = ["FARGATE"]
-  cpu                      = 1024
-  memory                   = 2048
+  cpu                      = var.cpu
+  memory                   = var.memory
   network_mode             = "awsvpc"
   execution_role_arn       = aws_iam_role.ecs_task_execution_role.arn
   task_role_arn            = aws_iam_role.ecs_task_execution_role.arn
@@ -69,7 +69,7 @@ resource "aws_ecs_task_definition" "doccano" {
   container_definitions = jsonencode([
     {
       name      = "doccano"
-      image     = "quay.io/pcdc/doccano:be_20240813"
+      image     = "quay.io/pcdc/doccano:${var.application_tag}" #"quay.io/pcdc/doccano:be_20240813"
       essential = true
       mountPoints = [
         {
@@ -124,7 +124,7 @@ resource "aws_ecs_task_definition" "doccano" {
     },
     {
       name       = "celery"
-      image      = "quay.io/pcdc/doccano:be_20240813"
+      image      = "quay.io/pcdc/doccano:${var.application_tag}"
       essential  = true
       entryPoint = ["/opt/bin/prod-celery.sh"]
       mountPoints = [
@@ -173,7 +173,7 @@ resource "aws_ecs_task_definition" "doccano" {
     },
     {
       name       = "flower"
-      image      = "quay.io/pcdc/doccano:be_20240813"
+      image      = "quay.io/pcdc/doccano:${var.application_tag}"
       essential  = true
       entryPoint = ["/opt/bin/prod-flower.sh"]
       portMappings = [
@@ -213,16 +213,15 @@ resource "aws_ecs_task_definition" "doccano" {
         }, {
         name      = "DATABASE_URL"
         valueFrom = var.database_url
-        },
-        {
-          name      = "FLOWER_BASIC_AUTH"
-          valueFrom = aws_ssm_parameter.FLOWER_BASIC_AUTH.arn
+        }, {
+        name      = "FLOWER_BASIC_AUTH"
+        valueFrom = aws_ssm_parameter.FLOWER_BASIC_AUTH.arn
         }
       ]
     },
     {
       name      = "rabbitmq"
-      image     = "rabbitmq:3.10.7-alpine"
+      image     = "${var.rabbitmq_image}:${var.application_tag}"
       essential = true
       portMappings = [
         {
@@ -250,7 +249,7 @@ resource "aws_ecs_task_definition" "doccano" {
     },
     {
       name       = "nginx"
-      image      = "954006452010.dkr.ecr.us-east-1.amazonaws.com/doccano-nginx:latest" #"quay.io/pcdc/doccano:fe_20240813"
+      image      = "quay.io/pcdc/doccano:${var.application_tag}" #"quay.io/pcdc/doccano:fe_20240813"
       essential  = true
       entryPoint = ["/bin/sh", "-c"]
       command    = ["envsubst < /etc/nginx/nginx.conf.template > /etc/nginx/nginx.conf && nginx -g 'daemon off;'"]

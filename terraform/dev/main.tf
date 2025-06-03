@@ -2,12 +2,12 @@ module "doccano_ecs" {
   source            = "../modules/ecs"
   app_name          = var.app_name
   subnet_ids        = var.private_subnet_ids
-  lb_security_group = [module.doccano_alb.lb_security_group]
+  lb_security_group = [module.doccano_alb.alb_security_group]
   load_balancer = {
     container_port = 8080
   }
   vpc_id           = var.vpc_id
-  target_group_arn = module.doccano_alb.doccano_target_group.arn
+  target_group_arn = module.doccano_alb.alb_target_group_arn
   container_name   = "nginx"
   # container_count = 2
   efs_volume                    = module.doccano_efs.efs_id
@@ -64,8 +64,9 @@ module "doccano_efs" {
 }
 
 module "doccano_alb" {
-  source      = "../modules/alb"
+  source      = "git::ssh://git@github.com/chicagopcdc/terraform_modules.git//aws/alb?ref=0.4.2"
   environment = var.environment
+  app_name    = "doccano"
   vpc_id      = var.vpc_id
   subnet_ids  = var.private_subnet_ids
 }
