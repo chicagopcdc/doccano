@@ -5,6 +5,7 @@ from .views.project import CloneProject, ProjectDetail, ProjectList
 from .views.tag import TagDetail, TagList
 
 urlpatterns = [
+    # CSRF-protected (browser-safe)
     path(route="projects", view=ProjectList.as_view(), name="project_list"),
     path(route="projects/<int:project_id>", view=ProjectDetail.as_view(), name="project_detail"),
     path(route="projects/<int:project_id>/my-role", view=MyRole.as_view(), name="my_role"),

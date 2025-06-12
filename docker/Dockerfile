@@ -7,7 +7,7 @@ WORKDIR /frontend
 ENV PUBLIC_PATH="/static/_nuxt/"
 # hadolint ignore=DL3008
 RUN apt-get update \
- && apt-get install -y --no-install-recommends git python3 make g++ ca-certificates \
+ && apt-get install -y --no-install-recommends --fix-missing git python3 make g++ ca-certificates \
  && git config --global url."https://github.com/".insteadOf git://github.com/ \
  && yarn install --network-timeout 1000000 \
  && yarn build \
@@ -18,7 +18,7 @@ FROM python:${PYTHON_VERSION} AS backend-builder
 
 # hadolint ignore=DL3008
 RUN apt-get update \
- && apt-get install -y --no-install-recommends \
+ && apt-get install -y --no-install-recommends --fix-missing \
     netcat=1.* \
     libpq-dev=13.* \
     unixodbc-dev=2.* \
@@ -32,9 +32,15 @@ WORKDIR /tmp
 COPY backend/pyproject.toml backend/poetry.lock /tmp/
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 
-RUN pip install -U --no-cache-dir pip==22.2.2 \
- && curl -sSL https://install.python-poetry.org | python - \
- && export PATH="/root/.local/bin:$PATH" \
+RUN pip install -U --no-cache-dir pip==22.2.2
+
+ENV POETRY_VERSION=1.8.3
+
+RUN curl -sSL https://install.python-poetry.org | python - || (cat /tmp/poetry-installer-error-* && false)
+
+ENV PATH="/root/.local/bin:$PATH"
+
+RUN poetry --version \
  && poetry export --without-hashes -o /requirements.txt \
  && echo "psycopg2-binary==2.8.6" >> /requirements.txt \
  && echo "django-heroku==0.3.1" >> /requirements.txt \
@@ -43,7 +49,7 @@ RUN pip install -U --no-cache-dir pip==22.2.2 \
 FROM python:${PYTHON_VERSION} AS runtime
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends \
+ && apt-get install -y --no-install-recommends --fix-missing \
     libpq-dev=13.* \
     unixodbc-dev=2.* \
     libssl-dev=1.* \

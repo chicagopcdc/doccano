@@ -4,6 +4,7 @@ services:
   backend:
     image: quay.io/pcdc/doccano:be_20240813
     volumes:
+      - ../backend:/backend # Step get around quay
       - static_volume:/backend/staticfiles
       - media:/backend/media
       - tmp_file:/backend/filepond-temp-uploads
@@ -27,8 +28,10 @@ services:
     volumes:
       - media:/backend/media
       - tmp_file:/backend/filepond-temp-uploads
-    entrypoint: ["/opt/bin/prod-celery.sh"]
     environment:
+      ADMIN_USERNAME: "${ADMIN_USERNAME}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
       PYTHONUNBUFFERED: "1"
       CELERY_BROKER_URL: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq"
       DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable"
@@ -41,8 +44,10 @@ services:
 
   flower:
     image: quay.io/pcdc/doccano:be_20240813
-    entrypoint: ["/opt/bin/prod-flower.sh"]
     environment:
+      ADMIN_USERNAME: "${ADMIN_USERNAME}"
+      ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
       PYTHONUNBUFFERED: "1"
       CELERY_BROKER_URL: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq"
       DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable"
@@ -83,7 +88,7 @@ services:
       - static_volume:/static
       - media:/media
     ports:
-      - 80:8080
+      - 8080:8080
     depends_on:
       - backend
     networks:

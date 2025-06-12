@@ -13,15 +13,18 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
+
 import os
 import re
 from pathlib import Path
+from rest_framework.authtoken.views import obtain_auth_token
 
 from django.conf import settings
 from django.contrib import admin
 from django.contrib.auth.views import TemplateView
 from django.urls import include, path, re_path
 from django.views.static import serve
+from django.views.decorators.csrf import csrf_exempt
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
 
@@ -55,6 +58,7 @@ urlpatterns += [
     path("social/", include("social.urls")),
     path("v1/social/", include("social.v1_urls")),
     path("v1/health/", include("health_check.urls")),
+    path("v1/auth-token/", csrf_exempt(obtain_auth_token)),  # CSRF Execmpt for this API path
     path("v1/", include("api.urls")),
     path("v1/", include("roles.urls")),
     path("v1/", include("users.urls")),
