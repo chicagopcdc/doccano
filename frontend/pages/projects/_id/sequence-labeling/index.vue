@@ -15,27 +15,27 @@
     </template>
     <template #content>
       <v-card>
-          <div class="annotation-text pa-4">
-            <entity-editor
-              :dark="$vuetify.theme.dark"
-              :rtl="isRTL"
-              :text="doc.text"
-              :entities="annotations"
-              :entity-labels="spanTypes"
-              :relations="relations"
-              :relation-labels="relationTypes"
-              :allow-overlapping="project.allowOverlappingSpans"
-              :grapheme-mode="project.enableGraphemeMode"
-              :selected-label="selectedLabel"
-              :relation-mode="relationMode"
-              @addEntity="addSpan"
-              @addRelation="addRelation"
-              @click:entity="updateSpan"
-              @click:relation="updateRelation"
-              @contextmenu:entity="confirmDeleteSpan"
-              @contextmenu:relation="deleteRelation"
-            />
-          </div>
+        <div class="annotation-text pa-4">
+          <entity-editor
+            :dark="$vuetify.theme.dark"
+            :rtl="isRTL"
+            :text="doc.text"
+            :entities="annotations"
+            :entity-labels="spanTypes"
+            :relations="relations"
+            :relation-labels="relationTypes"
+            :allow-overlapping="project.allowOverlappingSpans"
+            :grapheme-mode="project.enableGraphemeMode"
+            :selected-label="selectedLabel"
+            :relation-mode="relationMode"
+            @addEntity="addSpan"
+            @addRelation="addRelation"
+            @click:entity="updateSpan"
+            @click:relation="updateRelation"
+            @contextmenu:entity="confirmDeleteSpan"
+            @contextmenu:relation="deleteRelation"
+          />
+        </div>
       </v-card>
     </template>
     <template #sidebar>
@@ -75,7 +75,7 @@
                 >
                   {{ item.suffixKey }}
                 </v-avatar>
-              </v-chip> 
+              </v-chip>
             </v-chip-group>
           </v-card-text>
         </v-expand-transition>

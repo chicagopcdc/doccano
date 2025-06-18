@@ -27,10 +27,7 @@
       />
     </template>
     <template #[`item.backgroundColor`]="props">
-      <v-chip
-        :color="props.item.backgroundColor"
-  
-      >
+      <v-chip :color="props.item.backgroundColor">
         {{ props.item.backgroundColor }}
       </v-chip>
     </template>
@@ -85,12 +82,13 @@ export default Vue.extend({
   computed: {
     headers() {
       const headers = [
-        { text: this.$t('generic.name'), value: 'text' },
-        { text: this.$t('labels.shortkey'), value: 'suffixKey' },
-        { text: this.$t('labels.color'), value: 'backgroundColor' },
-        { text: this.$t('labels.meta'), value: 'meta' },
-        { text: 'Actions', value: 'actions', sortable: false }
+        { text: this.$t('generic.name'), value: 'text', sortable: true },
+        { text: this.$t('labels.shortkey'), value: 'suffixKey', sortable: true },
+        { text: this.$t('labels.color'), value: 'backgroundColor', sortable: true },
+        { text: this.$t('labels.description'), value: 'description', sortable: true },
+        { text: this.$t('labels.meta'), value: 'meta', sortable: true }
       ]
+
       if (!this.disableEdit) {
         headers.push({ text: 'Actions', value: 'actions', sortable: false })
       }

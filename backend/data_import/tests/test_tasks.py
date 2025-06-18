@@ -174,7 +174,7 @@ class TestImportClassificationData(TestImportData):
 
 
 class TestImportSequenceLabelingData(TestImportData):
-    task = ProjectType.SEQUENCE_LABELING
+    task = ProjectType.SEQUENCE_LABELING_LEGACY
 
     def assert_examples(self, dataset):
         self.assertEqual(Example.objects.count(), len(dataset))
@@ -213,6 +213,8 @@ class TestImportSequenceLabelingData(TestImportData):
         filename = "sequence_labeling/example_overlapping.jsonl"
         file_format = "JSONL"
         response = self.import_dataset(filename, file_format, self.task)
+        print("TestImportSequenceLabelingData - test_jsonl_with_overlapping")
+        print(response["error"])
         self.assertEqual(len(response["error"]), 0)
 
 
@@ -230,6 +232,7 @@ class TestImportRelationExtractionData(TestImportData):
         for text, expected_spans in dataset:
             example = Example.objects.get(text=text)
             spans = [[span.start_offset, span.end_offset, span.label.text] for span in example.spans.all()]
+
             self.assertEqual(spans, expected_spans)
             self.assertEqual(example.relations.count(), 3)
 
@@ -292,7 +295,9 @@ class TestImportIntentDetectionAndSlotFillingData(TestImportData):
         for text, expected_labels in dataset:
             example = Example.objects.get(text=text)
             cats = set(cat.label.text for cat in example.categories.all())
-            entities = [(span.start_offset, span.end_offset, span.label.text, span.meta) for span in example.spans.all()]
+            entities = [
+                (span.start_offset, span.end_offset, span.label.text, span.meta) for span in example.spans.all()
+            ]
             self.assertEqual(cats, set(expected_labels["cats"]))
             self.assertEqual(entities, expected_labels["entities"])
 
@@ -315,6 +320,7 @@ class TestImportImageClassificationData(TestImportData):
     def test_example(self):
         filename = "images/1500x500.jpeg"
         file_format = "ImageFile"
+        print("TestImportImageClassificationData")
         self.import_dataset(filename, file_format, self.task)
         self.assertEqual(Example.objects.count(), 1)
 
