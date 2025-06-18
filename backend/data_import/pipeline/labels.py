@@ -12,6 +12,7 @@ from labels.models import Span as SpanModel
 from labels.models import TextLabel as TextLabelModel
 from projects.models import Project
 
+
 class Labels(abc.ABC):
     label_model = LabelModel
 
