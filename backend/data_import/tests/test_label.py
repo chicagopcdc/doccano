@@ -78,7 +78,7 @@ class TestSpanLabel(TestLabel):
 
     def test_parse_dict(self):
         example_uuid = uuid.uuid4()
-        span = SpanLabel.parse(example_uuid, obj={"label": "A", "start_offset": 0, "end_offset": 1, "meta":{}})
+        span = SpanLabel.parse(example_uuid, obj={"label": "A", "start_offset": 0, "end_offset": 1, "meta": {}})
         self.assertEqual(span.label, "A")
         self.assertEqual(span.start_offset, 0)
         self.assertEqual(span.end_offset, 1)
@@ -95,7 +95,7 @@ class TestSpanLabel(TestLabel):
     def test_parse_invalid_dict(self):
         example_uuid = uuid.uuid4()
         with self.assertRaises(ValueError):
-            SpanLabel.parse(example_uuid, obj={"label": "A", "start_offset": 0, "meta":{}})
+            SpanLabel.parse(example_uuid, obj={"label": "A", "start_offset": 0, "meta": {}})
 
     def test_create_type(self):
         span = SpanLabel(label="A", start_offset=0, end_offset=1, example_uuid=uuid.uuid4(), meta={})

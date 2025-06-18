@@ -15,6 +15,7 @@ from roles.models import Role
 class ProjectType(models.TextChoices):
     DOCUMENT_CLASSIFICATION = "DocumentClassification"
     SEQUENCE_LABELING = "SequenceLabeling"
+    SEQUENCE_LABELING_LEGACY = "SequenceLabeling__LEGACY"
     SEQ2SEQ = "Seq2seq"
     INTENT_DETECTION_AND_SLOT_FILLING = "IntentDetectionAndSlotFilling"
     SPEECH2TEXT = "Speech2text"

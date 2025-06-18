@@ -147,7 +147,7 @@ class TestRelations(TestCase):
         self.user = self.project.admin
         example_uuid = uuid.uuid4()
         example = mommy.make("Example", project=self.project.item, uuid=example_uuid, text="hello world")
-        from_span = mommy.make("Span", example=example, start_offset=0, end_offset=1, meta={"key":"value"})
+        from_span = mommy.make("Span", example=example, start_offset=0, end_offset=1, meta={"key": "value"})
         to_span = mommy.make("Span", example=example, start_offset=2, end_offset=3, meta={})
         labels = [
             RelationLabel(example_uuid=example_uuid, type="A", from_id=from_span.id, to_id=to_span.id),

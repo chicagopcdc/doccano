@@ -8,5 +8,6 @@ class TestOptions(unittest.TestCase):
     def test_return_at_least_one_option(self):
         for task in ProjectType:
             with self.subTest(task=task):
-                options = Options.filter_by_task(task)
-                self.assertGreaterEqual(len(options), 1)
+                if task != ProjectType.SEQUENCE_LABELING_LEGACY:
+                    options = Options.filter_by_task(task)
+                    self.assertGreaterEqual(len(options), 1)
