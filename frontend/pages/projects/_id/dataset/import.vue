@@ -76,12 +76,18 @@
         @processfile="handleFilePondProcessFile"
         @removefile="handleFilePondRemoveFile"
       />
-      <v-data-table
-        v-if="errors.length > 0"
-        :headers="headers"
-        :items="errors"
-        class="elevation-1"
-      ></v-data-table>
+      <div v-if="errors.length > 0" class="mt-4">
+        <v-alert type="error" border="left" colored-border elevation="2">
+          {{ errors.length }} error(s) found during dataset import. Please check the table below:
+        </v-alert>
+        <v-data-table
+          :headers="headers"
+          :items="errors"
+          class="elevation-1"
+          dense
+          disable-pagination
+        />
+      </div>
     </v-card-text>
     <v-card-actions>
       <v-btn class="text-capitalize ms-2 primary" :disabled="isDisabled" @click="importDataset">
@@ -226,6 +232,7 @@ export default {
       this.uploadedFiles.push(file)
       this.$nextTick()
     },
+
     handleFilePondRemoveFile(error, file) {
       console.log(error)
       const index = this.uploadedFiles.findIndex((item) => item.id === file.id)
@@ -234,34 +241,95 @@ export default {
         this.$nextTick()
       }
     },
+
+    /**
+     * Initiates dataset import via API.
+     * Applies error-clearing and sets loading indicator.
+     */
     async importDataset() {
-      this.isImporting = true
-      const item = this.catalog.find((item) => item.displayName === this.selected)
-      this.taskId = await this.$repositories.parse.analyze(
-        this.$route.params.id,
-        item.name,
-        item.taskId,
-        this.uploadedFiles.map((item) => item.serverId),
-        this.option
-      )
+      // Always reset errors and task state before a new import attempt
+      this.errors = []
+      this.taskId = null
+      this.isImporting = true // Trigger spinner/loading state
+
+      try {
+        // Find the selected file format option from the catalog (e.g., JSONL, CSV)
+        const item = this.catalog.find((item) => item.displayName === this.selected)
+
+        // Call the backend API to start analyzing the uploaded dataset
+        // This returns a task ID, which we poll later for progress/results
+        this.taskId = await this.$repositories.parse.analyze(
+          this.$route.params.id, // Current project ID
+          item.name, // Backend name of format
+          item.taskId, // Expected task type
+          this.uploadedFiles.map((item) => item.serverId), // Files we just uploaded
+          this.option // Extra parsing options (delimiter, etc.)
+        )
+      } catch (e) {
+        // If the backend call fails immediately (network error, invalid file, etc.)
+        this.isImporting = false // Stop spinner so UI is usable again
+
+        const errorData = e?.response?.data // Try to capture backend's structured error
+
+        // Case 1: Backend returned multiple validation errors in an array
+        if (Array.isArray(errorData?.detail)) {
+          this.errors = errorData.detail.map((d) => ({
+            filename: d.filename || 'Upload error', // File that failed (fallback text if missing)
+            line: d.line || '-', // Line number in file, if available
+            message: d.msg || d.message || 'Issue found.' // Error description
+          }))
+        } else {
+          // Case 2: Single error (string or object)
+          const backendError = errorData?.detail || errorData?.error || e.message
+
+          // Display a single row in the error table
+          this.errors = [
+            {
+              filename: 'Upload error', // Consistent wording to avoid "Unknown"
+              line: '-', // No specific line available
+              message: backendError || 'Upload failed. Please check your file format or try again.'
+            }
+          ]
+        }
+      }
     },
+
+    /**
+     * Polls backend task status and updates UI accordingly.
+     */
     pollData() {
       this.polling = setInterval(async () => {
         if (this.taskId) {
-          const res = await this.$repositories.taskStatus.get(this.taskId)
-          if (res.ready) {
-            this.taskId = null
-            this.errors = res.result.error
-            this.myFiles = []
-            this.uploadedFiles = []
-            this.isImporting = false
-            if (this.errors.length === 0) {
-              this.$router.push(`/projects/${this.$route.params.id}/dataset`)
+          try {
+            const res = await this.$repositories.taskStatus.get(this.taskId)
+            if (res.ready) {
+              this.taskId = null
+              this.errors = res.result.error || []
+              this.myFiles = []
+              this.uploadedFiles = []
+              this.isImporting = false
+
+              // Redirect if successful
+              if (this.errors.length === 0) {
+                this.$router.push(`/projects/${this.$route.params.id}/dataset`)
+              }
             }
+          } catch (err) {
+            console.error('Polling failed:', err)
+            this.errors = [
+              {
+                filename: 'Polling error',
+                line: '-',
+                message: err?.message || 'Unexpected error during import polling.'
+              }
+            ]
+            this.isImporting = false
+            this.taskId = null
           }
         }
       }, 3000)
     },
+
     toVisualize(text) {
       if (text === '\t') {
         return 'Tab'
