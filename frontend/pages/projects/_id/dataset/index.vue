@@ -159,7 +159,7 @@ export default Vue.extend({
     },
 
     itemKey(): string {
-      if (this.project.isImageProject || this.project.isAudioProject) {
+      if ((this as any).project.isImageProject || (this as any).project.isAudioProject) {
         return 'filename'
       } else {
         return 'text'
@@ -199,7 +199,7 @@ export default Vue.extend({
     },
 
     movePage(query: object) {
-      const link = getLinkToAnnotationPage(this.projectId, this.project.projectType)
+      const link = getLinkToAnnotationPage(this.projectId, (this as any).project.projectType)
       this.updateQuery({
         path: this.localePath(link),
         query

@@ -145,6 +145,79 @@ After running the following command, access <http://127.0.0.1/>.
 docker-compose -f docker/docker-compose.prod.yml --env-file .env up
 ```
 
+# Local Development (Docker)
+
+## Prerequisites
+
+* Docker Desktop (or Docker Engine)
+* Bash (for `tools/local.sh`)
+
+## 1) Configure environment
+
+```bash
+cp docker/.env.example docker/.env
+# Then edit docker/.env and set:
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=changeme
+ADMIN_EMAIL=admin@example.com
+```
+
+## 2) One-shot start (build → run → migrate → user admin)
+
+```bash
+tools/local.sh full
+```
+
+* App: [http://localhost](http://localhost)
+* Uses `docker/docker-compose.local.yml` with your local `backend/` + `frontend/` sources.
+* Seeds/ensures the admin user from the env above (idempotent).
+
+## 3) Common dev loops
+
+```bash
+# Rebuild frontend (nginx image) and restart it
+tools/local.sh fe
+
+# Rebuild backend and restart it (also migrates + ensures admin)
+tools/local.sh be
+
+# Tail logs
+tools/local.sh logs-backend
+tools/local.sh logs-nginx
+```
+
+## 4) Utilities
+
+```bash
+# Start / Stop
+tools/local.sh up
+tools/local.sh down
+
+# Database migrations (manual)
+tools/local.sh migrate
+
+# (Re)seed admin only (safe to re-run)
+tools/local.sh seed-admin
+
+# Cleanup (choose one)
+tools/local.sh clean       # down -v (removes DB/media volumes)
+tools/local.sh purge       # down -v --rmi local (also remove locally built images)
+tools/local.sh purge-all   # down -v --rmi all (also remove pulled images)
+```
+
+## Notes
+
+* `tools/local.sh` auto-detects `docker compose` vs `docker-compose`.
+* After `clean`/`purge`/`purge-all`, run `tools/local.sh full` to recreate the DB and admin.
+* Troubleshooting:
+
+  ```bash
+  tools/local.sh ps
+  tools/local.sh logs-backend
+  tools/local.sh logs-nginx
+  ```
+
+
 ### One-click Deployment
 
 | Service | Button |

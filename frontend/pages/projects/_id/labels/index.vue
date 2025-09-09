@@ -94,7 +94,7 @@ export default Vue.extend({
       if (this.member.isProjectAdmin) {
         return false
       }
-      return this.project.allowMemberToCreateLabelType
+      return (this as any).project.allowMemberToCreateLabelType
     },
 
     canDelete(): boolean {
@@ -106,15 +106,15 @@ export default Vue.extend({
     },
 
     hasMultiType(): boolean {
-      if ('projectType' in this.project) {
-        return this.isIntentDetectionAndSlotFilling || !!this.project.useRelation
+      if ('projectType' in (this as any).project) {
+        return this.isIntentDetectionAndSlotFilling || !!(this as any).project.useRelation
       } else {
         return false
       }
     },
 
     isIntentDetectionAndSlotFilling(): boolean {
-      return this.project.projectType === 'IntentDetectionAndSlotFilling'
+      return (this as any).project.projectType === 'IntentDetectionAndSlotFilling'
     },
 
     labelType(): string {
@@ -124,7 +124,7 @@ export default Vue.extend({
         } else {
           return ['span', 'relation'][this.tab!]
         }
-      } else if (this.project.canDefineCategory) {
+      } else if ((this as any).project.canDefineCategory) {
         return 'category'
       } else {
         return 'span'
@@ -132,7 +132,7 @@ export default Vue.extend({
     },
 
     service(): any {
-      if (!('projectType' in this.project)) {
+      if (!('projectType' in (this as any).project)) {
         return
       }
       if (this.hasMultiType) {
@@ -141,7 +141,7 @@ export default Vue.extend({
         } else {
           return [this.$services.spanType, this.$services.relationType][this.tab!]
         }
-      } else if (this.project.canDefineCategory) {
+      } else if ((this as any).project.canDefineCategory) {
         return this.$services.categoryType
       } else {
         return this.$services.spanType

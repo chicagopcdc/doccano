@@ -37,7 +37,8 @@ export default Vue.extend({
 
   data() {
     return {
-      errorMessage: ''
+      loading: false as boolean,
+      errorMessage: '' as string
     }
   },
 
