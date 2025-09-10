@@ -168,9 +168,9 @@ ADMIN_EMAIL=admin@example.com
 tools/local.sh full
 ```
 
-* App: [http://localhost](http://localhost)
+* App: [http://127.0.0.1/](http://127.0.0.1/)
 * Uses `docker/docker-compose.local.yml` with your local `backend/` + `frontend/` sources.
-* Seeds/ensures the admin user from the env above (idempotent).
+* An admin user and rolls from the env above will be created.
 
 ## 3) Common dev loops
 

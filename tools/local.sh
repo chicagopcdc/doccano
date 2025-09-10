@@ -24,16 +24,43 @@ if [[ "${TASK}" == "-task" || "${TASK}" == "--task" ]]; then
   TASK="${1:-help}"
 fi
 
-seed_admin() {
+user_admin() {
   # Run migrations first (safe to re-run)
   dc exec backend bash -lc "python manage.py migrate --noinput || true"
 
-  # Create/ensure superuser using DJANGO_SUPERUSER_* or ADMIN_* vars (idempotent)
+  # User roles + ensure admin (all inside Django via manage.py shell)
   dc exec -T backend bash -lc 'cd /backend || true; python manage.py shell <<'"'"'PY'"'"'
 import os
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.db import transaction
 
+# --- User roles ---
+try:
+    from roles.models import Role
+except Exception as e:
+    print(f"Roles app not available: {e}")
+else:
+    names = []
+    for attr in dir(settings):
+        if attr.startswith("ROLE_"):
+            val = getattr(settings, attr)
+            if isinstance(val, str) and val:
+                names.append(val)
+    names = sorted(set(names))
+    created_any = False
+    with transaction.atomic():
+        for name in names:
+            _, created = Role.objects.get_or_create(name=name)
+            if created:
+                created_any = True
+                print(f"Created role: {name}")
+    if not names:
+        print("No ROLE_* constants found; nothing to User.")
+    elif not created_any:
+        print("All roles already present.")
+
+# --- Ensure admin ---
 u = os.environ.get("DJANGO_SUPERUSER_USERNAME") or os.environ.get("ADMIN_USERNAME")
 e = os.environ.get("DJANGO_SUPERUSER_EMAIL")    or os.environ.get("ADMIN_EMAIL")
 p = os.environ.get("DJANGO_SUPERUSER_PASSWORD") or os.environ.get("ADMIN_PASSWORD")
@@ -53,12 +80,9 @@ else:
             print(f"Created superuser: {u}")
         else:
             changed = False
-            if not obj.is_superuser:
-                obj.is_superuser = True; changed = True
-            if not obj.is_staff:
-                obj.is_staff = True; changed = True
-            if e and obj.email != e:
-                obj.email = e; changed = True
+            if not obj.is_superuser: obj.is_superuser = True; changed = True
+            if not obj.is_staff:     obj.is_staff = True;     changed = True
+            if e and obj.email != e: obj.email = e;           changed = True
             if changed:
                 obj.save()
                 print(f"Updated existing user to superuser: {u}")
@@ -73,7 +97,7 @@ case "${TASK}" in
 Usage: tools/local.sh <task>
 
 Core:
-  full               Build backend+frontend, up -d, migrate, seed admin (idempotent)
+  full               Build backend+frontend, up -d, migrate, User admin + roll
   up                 Start all services in the background
   down               Stop all services
   clean              down -v (remove DB/media volumes)
@@ -91,7 +115,7 @@ Dev loops:
 
 Ops:
   migrate            Run Django migrations
-  seed-admin         Create/ensure admin from env (idempotent)
+  User-admin         Create/ensure admin from env
   createsuperuser    Run Django createsuperuser (interactive)
   shell-backend      Open a bash shell in the backend container
   shell-nginx        Open a sh shell in the nginx container
@@ -102,19 +126,19 @@ Examples:
   tools/local.sh fe
   tools/local.sh be
   tools/local.sh logs-backend
-  tools/local.sh seed-admin
+  tools/local.sh User-admin
 USAGE
     ;;
 
   full)
-    echo "Building backend & frontend…"
+    echo "Building backend & frontend..."
     dc build backend nginx
-    echo "Starting stack…"
+    echo "Starting..."
     dc up -d
-    echo "Running migrations (idempotent)…"
+    echo "Running..."
     dc exec backend bash -lc "python manage.py migrate --noinput || true"
-    echo "Seeding admin user (idempotent)…"
-    seed_admin
+    echo "User + Role..."
+    user_admin
     echo "Full start done. Open http://127.0.0.1/"
     ;;
 
@@ -147,27 +171,27 @@ USAGE
     ;;
 
   fe|rebuild-frontend)
-    echo "Rebuilding frontend (nginx image)…"
+    echo "Rebuilding frontend (nginx image)..."
     dc build nginx
-    echo "Restarting nginx…"
+    echo "Restarting nginx..."
     dc up -d nginx
     ;;
 
   be|rebuild-backend)
-    echo "Rebuilding backend…"
+    echo "Rebuilding backend..."
     dc build backend
-    echo "Restarting backend…"
+    echo "Restarting backend..."
     dc up -d backend
-    echo "Running migrations & ensuring admin…"
-    seed_admin
+    echo "Running migrations & ensuring admin + rolls..."
+    user_admin
     ;;
 
   migrate)
     dc exec backend bash -lc "python manage.py migrate"
     ;;
 
-  seed-admin)
-    seed_admin
+  User-admin)
+    user_admin
     ;;
 
   createsuperuser)
