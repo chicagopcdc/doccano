@@ -115,7 +115,7 @@ USAGE
     dc exec backend bash -lc "python manage.py migrate --noinput || true"
     echo "Seeding admin user (idempotent)…"
     seed_admin
-    echo "✅ Full start done. Open http://localhost"
+    echo "Full start done. Open http://127.0.0.1/"
     ;;
 
   up)
