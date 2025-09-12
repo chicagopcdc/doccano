@@ -190,7 +190,7 @@ tools/local.sh logs-nginx
 
 ```bash
 # Start / Stop
-tools/local.sh full;
+tools/local.sh up;
 tools/local.sh down;
 
 # Cleanup (choose one)
