@@ -190,20 +190,16 @@ tools/local.sh logs-nginx
 
 ```bash
 # Start / Stop
-tools/local.sh up
-tools/local.sh down
-
-# Database migrations (manual)
-tools/local.sh migrate
-
-# (Re)seed admin only (safe to re-run)
-tools/local.sh seed-admin
+tools/local.sh full;
+tools/local.sh down;
 
 # Cleanup (choose one)
 tools/local.sh clean       # down -v (removes DB/media volumes)
 tools/local.sh purge       # down -v --rmi local (also remove locally built images)
 tools/local.sh purge-all   # down -v --rmi all (also remove pulled images)
 ```
+
+See notes in tools/local.sh for full documentation.
 
 ## Notes
 
