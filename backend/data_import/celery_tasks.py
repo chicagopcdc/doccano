@@ -1,30 +1,26 @@
 # -*- coding: utf-8 -*-
 
-import filetype
+import json
+from pathlib import Path
+from typing import Iterable, List, Optional
+
 from celery import shared_task
 from celery.exceptions import SoftTimeLimitExceeded
+from django.apps import apps
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.shortcuts import get_object_or_404
+from django.db import DataError, IntegrityError, ProgrammingError, transaction
+from django.db.utils import OperationalError
 from django_drf_filepond.api import store_upload
 from django_drf_filepond.models import TemporaryUpload
-from django.db import transaction, DataError, IntegrityError, ProgrammingError
-from django.db.utils import OperationalError
-from django.apps import apps
+from django.shortcuts import get_object_or_404
+import filetype
 
+from projects.models import Project
 from .datasets import load_dataset
 from .pipeline.catalog import Format, create_file_format
-from .pipeline.exceptions import (
-    FileImportException,
-    FileTypeException,
-    MaximumFileSizeException,
-)
+from .pipeline.exceptions import FileImportException, FileTypeException, MaximumFileSizeException
 from .pipeline.readers import FileName
-from projects.models import Project
-
-from typing import List, Iterable, Optional
-from pathlib import Path
-import json
 
 
 def get_label_text_max_length_for_project(project) -> Optional[int]:
