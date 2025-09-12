@@ -169,7 +169,7 @@ export default {
       // Async task tracking
       taskId: null, // Celery task id returned by the API
       polling: null, // setInterval handle
-      pollingBusy: false, // guard: only one poll at a time
+      _pollingBusy: false, // guard: only one poll at a time
       polledDone: false, // guard: handle ready block once
       pollTimerMs: 1000, // poll every second
 
@@ -379,8 +379,8 @@ export default {
     pollData() {
       this.polling = setInterval(async () => {
         // Nothing to do until a task id exists
-        if (!this.taskId || this.pollingBusy) return
-        this.pollingBusy = true
+        if (!this.taskId || this._pollingBusy) return
+        this._pollingBusy = true
 
         try {
           // Ask backend for current task status
@@ -471,7 +471,7 @@ export default {
             this.polling = null
           }
         } finally {
-          this.pollingBusy = false
+          this._pollingBusy = false
         }
       }, this.pollTimerMs)
     },

@@ -90,7 +90,7 @@ def _err(filename: str, line: int, message: str) -> dict:
     Build a single error row in the shape the frontend expects.
     """
     return {
-        "Source": filename or "Import",
+        "filename": filename or "Import",
         "line": line if line is not None else "-",
         "message": str(message),
     }
