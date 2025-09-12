@@ -1,34 +1,55 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# -e : exit on first error
+# -u : error on unset variables
+# -o pipefail : fail a pipeline if any command fails
 
-# Resolve project root from this script's location
+# ------------------------------------------------------------
+# Locate important paths relative to this script
+# ------------------------------------------------------------
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 
 COMPOSE_FILE="${PROJECT_ROOT}/docker/docker-compose.local.yml"
 ENV_FILE="${PROJECT_ROOT}/docker/.env"
 
-# Pick compose CLI
+# ------------------------------------------------------------
+# Pick the docker compose CLI (new 'docker compose' vs old 'docker-compose')
+# ------------------------------------------------------------
 if docker compose version >/dev/null 2>&1; then
   DC_BIN="docker compose"
 else
   DC_BIN="docker-compose"
 fi
 
+# Small wrapper so we don't repeat flags everywhere
 dc() { ${DC_BIN} -f "${COMPOSE_FILE}" --env-file "${ENV_FILE}" "$@"; }
 
-# Allow both: "./tools/local.sh full" and "./tools/local.sh -task full"
+# ------------------------------------------------------------
+# Parse task argument
+# Supports:
+#   ./tools/local.sh full
+#   ./tools/local.sh -task full
+# ------------------------------------------------------------
 TASK="${1:-help}"
 if [[ "${TASK}" == "-task" || "${TASK}" == "--task" ]]; then
   shift || true
   TASK="${1:-help}"
 fi
 
+# ------------------------------------------------------------
+# user_admin:
+# - Run DB migrations (safe to run multiple times)
+# - Ensure Roles exist (reads ROLE_* constants from Django settings)
+# - Ensure an admin user exists, using env vars:
+#     ADMIN_USERNAME / ADMIN_EMAIL / ADMIN_PASSWORD
+#   (or DJANGO_SUPERUSER_* if provided)
+# ------------------------------------------------------------
 user_admin() {
-  # Run migrations first (safe to re-run)
+  # Run migrations inside the backend container
   dc exec backend bash -lc "python manage.py migrate --noinput || true"
 
-  # User roles + ensure admin (all inside Django via manage.py shell)
+  # Create roles and ensure admin user using a small manage.py shell script
   dc exec -T backend bash -lc 'cd /backend || true; python manage.py shell <<'"'"'PY'"'"'
 import os
 from django.conf import settings
@@ -42,6 +63,7 @@ except Exception as e:
     print(f"Roles app not available: {e}")
 else:
     names = []
+    # Collect all string constants from settings that start with ROLE_
     for attr in dir(settings):
         if attr.startswith("ROLE_"):
             val = getattr(settings, attr)
@@ -61,6 +83,7 @@ else:
         print("All roles already present.")
 
 # --- Ensure admin ---
+# Pull credentials from either DJANGO_SUPERUSER_* or ADMIN_*
 u = os.environ.get("DJANGO_SUPERUSER_USERNAME") or os.environ.get("ADMIN_USERNAME")
 e = os.environ.get("DJANGO_SUPERUSER_EMAIL")    or os.environ.get("ADMIN_EMAIL")
 p = os.environ.get("DJANGO_SUPERUSER_PASSWORD") or os.environ.get("ADMIN_PASSWORD")
@@ -72,6 +95,7 @@ else:
     with transaction.atomic():
         obj, created = User.objects.get_or_create(username=u, defaults={"email": e})
         if created:
+            # New user → set password + flags
             obj.set_password(p)
             obj.is_superuser = True
             obj.is_staff = True
@@ -79,6 +103,7 @@ else:
             obj.save()
             print(f"Created superuser: {u}")
         else:
+            # Existing user → make sure they are admin
             changed = False
             if not obj.is_superuser: obj.is_superuser = True; changed = True
             if not obj.is_staff:     obj.is_staff = True;     changed = True
@@ -91,6 +116,19 @@ else:
 PY'
 }
 
+# ------------------------------------------------------------
+# ensure_tmp_dir_perms:
+# Make sure the shared temp uploads dir exists and is writable
+# by everyone (sticky bit like /tmp). Both backend and celery use it.
+# ------------------------------------------------------------
+ensure_tmp_dir_perms() {
+  dc exec backend bash -lc 'mkdir -p /backend/filepond-temp-uploads && chmod 1777 /backend/filepond-temp-uploads || true'
+  dc exec celery  sh   -lc 'mkdir -p /backend/filepond-temp-uploads && chmod 1777 /backend/filepond-temp-uploads || true'
+}
+
+# ------------------------------------------------------------
+# Task switchboard
+# ------------------------------------------------------------
 case "${TASK}" in
   help|-h|--help)
     cat <<'USAGE'
@@ -135,6 +173,8 @@ USAGE
     dc build backend nginx
     echo "Starting..."
     dc up -d
+    echo "Upload temp directory..."
+    ensure_tmp_dir_perms
     echo "Running..."
     dc exec backend bash -lc "python manage.py migrate --noinput || true"
     echo "User + Role..."
@@ -143,34 +183,42 @@ USAGE
     ;;
 
   up)
+    # Start all services in the background
     dc up -d
     ;;
 
   down)
+    # Stop all services (keeps volumes and images)
     dc down
     ;;
 
   restart)
+    # Restart all running services
     dc restart
     ;;
 
   ps|status)
+    # Show container status table
     dc ps
     ;;
 
   logs)
+    # Follow logs for all services
     dc logs -f
     ;;
 
   logs-backend)
+    # Follow only backend logs
     dc logs -f backend
     ;;
 
   logs-nginx)
+    # Follow only nginx logs
     dc logs -f nginx
     ;;
 
   fe|rebuild-frontend)
+    # Rebuild nginx (frontend) image and restart just that service
     echo "Rebuilding frontend (nginx image)..."
     dc build nginx
     echo "Restarting nginx..."
@@ -178,59 +226,72 @@ USAGE
     ;;
 
   be|rebuild-backend)
+    # Rebuild backend image, restart backend, ensure temp dir and admin user/roles
     echo "Rebuilding backend..."
     dc build backend
     echo "Restarting backend..."
     dc up -d backend
+    echo "Upload temp directory..."
+    ensure_tmp_dir_perms
     echo "Running migrations & ensuring admin + rolls..."
     user_admin
     ;;
 
   migrate)
+    # Manually run migrations
     dc exec backend bash -lc "python manage.py migrate"
     ;;
 
   User-admin)
+    # Manually (re)create roles and admin user from env
     user_admin
     ;;
 
   createsuperuser)
+    # Interactive django superuser prompt (inside container)
     dc exec backend bash -lc "python manage.py createsuperuser"
     ;;
 
   shell-backend)
+    # Shell into backend container
     dc exec backend bash
     ;;
 
   shell-nginx)
+    # Shell into nginx container
     dc exec nginx sh
     ;;
 
   reset)
+    # WARNING: deletes named volumes (DB, media). Keeps images.
     echo "This will remove volumes (DB/media). Ctrl-C to cancel."
     sleep 2
     dc down -v
     ;;
 
   clean)
+    # Like reset, but also removes orphan containers that aren't in the compose file
     echo "This removes all volumes (DB/media). Ctrl-C to cancel."
     sleep 2
     dc down -v --remove-orphans
     ;;
 
   purge)
+    # Remove volumes AND locally built images for services in this compose
     echo "This removes volumes and locally built images. Ctrl-C to cancel."
     sleep 2
     dc down -v --rmi local --remove-orphans
     ;;
 
   purge-all)
+    # Remove volumes AND all images used by services (including pulled from registries)
     echo "This removes volumes and ALL images used by services (including pulled). Ctrl-C to cancel."
     sleep 2
     dc down -v --rmi all --remove-orphans
     ;;
 
   *)
+    # Unknown task fallback
     echo "Unknown task: ${TASK}"
     echo "Run 'tools/local.sh help' for usage."
     exit 1

@@ -30,19 +30,23 @@ services:
       - network-frontend
 
   celery:
-    image: quay.io/pcdc/doccano:be_20250618
-    volumes:
-      - media:/backend/media
-      - tmp_file:/backend/filepond-temp-uploads
-    entrypoint: ["/opt/bin/prod-celery.sh"]
+    image: doccano-be:local
+    user: "0:0"
+    working_dir: /backend
+    command: bash -lc "poetry run celery -A config worker -l info -Q celery --concurrency=2"
     environment:
       PYTHONUNBUFFERED: "1"
       CELERY_BROKER_URL: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq"
       DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=disable"
       DJANGO_SETTINGS_MODULE: "config.settings.production"
+    volumes:
+      - media:/backend/media
+      - tmp_file:/backend/filepond-temp-uploads
     depends_on:
-      - postgres
-      - rabbitmq
+      rabbitmq:
+        condition: service_started
+      postgres:
+        condition: service_started
     networks:
       - network-backend
 
