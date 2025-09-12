@@ -1,9 +1,4 @@
 # -*- coding: utf-8 -*-
-"""
-Celery task and helpers for dataset imports.
-"""
-
-from typing import List
 
 import filetype
 from celery import shared_task
@@ -15,7 +10,6 @@ from django_drf_filepond.api import store_upload
 from django_drf_filepond.models import TemporaryUpload
 from django.db import transaction, DataError, IntegrityError, ProgrammingError
 from django.db.utils import OperationalError
-from django.contrib.auth import get_user_model  # duplicated import is harmless, left as-is
 from django.apps import apps
 
 from .datasets import load_dataset
@@ -100,7 +94,7 @@ def _err(filename: str, line: int, message: str) -> dict:
     Build a single error row in the shape the frontend expects.
     """
     return {
-        "filename": filename or "Import",
+        "Source": filename or "Import",
         "line": line if line is not None else "-",
         "message": str(message),
     }

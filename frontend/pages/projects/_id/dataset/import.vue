@@ -133,18 +133,8 @@ import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type'
 import 'filepond/dist/filepond.min.css'
 import Cookies from 'js-cookie'
 import vueFilePond from 'vue-filepond'
-const FilePond = vueFilePond(FilePondPluginFileValidateType)
 
-/**
- * Safe stringify for odd error objects so we always show *something* readable.
- */
-function safeStringify(x) {
-  try {
-    return JSON.stringify(x)
-  } catch {
-    return 'Unknown error'
-  }
-}
+const FilePond = vueFilePond(FilePondPluginFileValidateType)
 
 export default {
   components: {
@@ -179,7 +169,7 @@ export default {
       // Async task tracking
       taskId: null, // Celery task id returned by the API
       polling: null, // setInterval handle
-      _pollingBusy: false, // guard: only one poll at a time
+      pollingBusy: false, // guard: only one poll at a time
       polledDone: false, // guard: handle ready block once
       pollTimerMs: 1000, // poll every second
 
@@ -295,15 +285,31 @@ export default {
 
   methods: {
     // FilePond: a file was successfully uploaded to temp storage
-    handleFilePondProcessFile(error, file) {
-      // console.log(error)
+    handleFilePondProcessFile(err, file) {
+      if (err) {
+        // Mark the error as handled to satisfy the rule and show feedback
+        console.error('FilePond process error:', err)
+        this.errors = [
+          {
+            filename: file?.filename || file?.name || 'Upload',
+            line: '-',
+            message: err?.message || String(err)
+          }
+        ]
+        return
+      }
+
       this.uploadedFiles.push(file)
       this.$nextTick()
     },
 
     // FilePond: a file was removed from the pond
-    handleFilePondRemoveFile(error, file) {
-      // console.log(error)
+    handleFilePondRemoveFile(err, file) {
+      if (err) {
+        console.error('FilePond remove error:', err)
+        return
+      }
+
       const index = this.uploadedFiles.findIndex((item) => item.id === file.id)
       if (index > -1) {
         this.uploadedFiles.splice(index, 1)
@@ -315,11 +321,11 @@ export default {
      * Start the import task on the backend.
      * The backend returns a Celery task id; we keep polling it until it’s done.
      * Contract:
-     *   - success => result.error is an empty array → redirect to dataset page
+     *   - success => result.error is an empty array => redirect to dataset page
      *   - failure => result.error contains rows to show in the table
      */
     async importDataset() {
-      // New attempt → clear previous state
+      // New attempt => clear previous state
       this.errors = []
       this.taskId = null
       this.isImporting = true
@@ -373,8 +379,8 @@ export default {
     pollData() {
       this.polling = setInterval(async () => {
         // Nothing to do until a task id exists
-        if (!this.taskId || this._pollingBusy) return
-        this._pollingBusy = true
+        if (!this.taskId || this.pollingBusy) return
+        this.pollingBusy = true
 
         try {
           // Ask backend for current task status
@@ -444,7 +450,7 @@ export default {
             return
           }
         } catch (err) {
-          // Network/HTTP errors during polling → show a readable message
+          // Network/HTTP errors during polling => show a readable message
           // console.error('Polling failed:', err)
           this.errors = [
             {
@@ -465,7 +471,7 @@ export default {
             this.polling = null
           }
         } finally {
-          this._pollingBusy = false
+          this.pollingBusy = false
         }
       }, this.pollTimerMs)
     },

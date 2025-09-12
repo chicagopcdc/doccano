@@ -95,7 +95,7 @@ export default Vue.extend({
      *  - on success: go back to the Labels list
      *  - on failure: show a helpful error message
      *
-     * We also defensively inspect resp.status in case a response object was returned.
+     * Defensively inspect resp.status in case a response object was returned.
      */
     async upload(file: File) {
       try {
