@@ -179,7 +179,7 @@ USAGE
     dc exec backend bash -lc "python manage.py migrate --noinput || true"
     echo "User + Role..."
     user_admin
-    echo "Full start done. Open http://127.0.0.1/"
+    echo "Full start done. Open http://127.0.0.1/auth"
     ;;
 
   up)

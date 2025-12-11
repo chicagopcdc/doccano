@@ -4,7 +4,7 @@
 
 # doccano
 
-[![Codacy Badge](https://app.codacy.com/project/badge/Grade/35ac8625a2bc4eddbff23dbc61bc6abb)](https://www.codacy.com/gh/doccano/doccano/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=doccano/doccano&amp;utm_campaign=Badge_Grade)
+[![Codacy Badge](https://app.codacy.com/project/badge/Grade/35ac8625a2bc4eddbff23dbc61bc6abb)](https://www.codacy.com/gh/doccano/doccano/dashboard?utm_source=github.com&utm_medium=referral&utm_content=doccano/doccano&utm_campaign=Badge_Grade)
 [![doccano CI](https://github.com/doccano/doccano/actions/workflows/ci.yml/badge.svg)](https://github.com/doccano/doccano/actions/workflows/ci.yml)
 
 doccano is an open-source text annotation tool for humans. It provides annotation features for text classification, sequence labeling, and sequence to sequence tasks. You can create labeled data for sentiment analysis, named entity recognition, text summarization, and so on. Just create a project, upload data, and start annotating. You can build a dataset in hours.
@@ -149,8 +149,8 @@ docker-compose -f docker/docker-compose.prod.yml --env-file .env up
 
 ## Prerequisites
 
-* Docker Desktop (or Docker Engine)
-* Bash (for `tools/local.sh`)
+- Docker Desktop (or Docker Engine)
+- Bash (for `tools/local.sh`)
 
 ## 1) Configure environment
 
@@ -168,9 +168,9 @@ ADMIN_EMAIL=admin@example.com
 tools/local.sh full
 ```
 
-* App: [http://127.0.0.1/](http://127.0.0.1/)
-* Uses `docker/docker-compose.local.yml` with your local `backend/` + `frontend/` sources.
-* An admin user and rolls from the env above will be created.
+- App: [http://127.0.0.1/auth](http://127.0.0.1/auth)
+- Uses `docker/docker-compose.local.yml` with your local `backend/` + `frontend/` sources.
+- An admin user and rolls from the env above will be created.
 
 ## 3) Common dev loops
 
@@ -203,9 +203,9 @@ See notes in tools/local.sh for full documentation.
 
 ## Notes
 
-* `tools/local.sh` auto-detects `docker compose` vs `docker-compose`.
-* After `clean`/`purge`/`purge-all`, run `tools/local.sh full` to recreate the DB and admin.
-* Troubleshooting:
+- `tools/local.sh` auto-detects `docker compose` vs `docker-compose`.
+- After `clean`/`purge`/`purge-all`, run `tools/local.sh full` to recreate the DB and admin.
+- Troubleshooting:
 
   ```bash
   tools/local.sh ps
@@ -213,16 +213,16 @@ See notes in tools/local.sh for full documentation.
   tools/local.sh logs-nginx
   ```
 
-
 ### One-click Deployment
 
-| Service | Button |
-|---------|---|
-| AWS[^1]   | [![AWS CloudFormation Launch Stack SVG Button](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=doccano&templateURL=https://doccano.s3.amazonaws.com/public/cloudformation/template.aws.yaml)  |
-| Heroku  | [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://dashboard.heroku.com/new?template=https%3A%2F%2Fgithub.com%2Fdoccano%2Fdoccano)  |
-<!-- | GCP[^2] | [![GCP Cloud Run PNG Button](https://storage.googleapis.com/gweb-cloudblog-publish/images/run_on_google_cloud.max-300x300.png)](https://console.cloud.google.com/cloudshell/editor?shellonly=true&cloudshell_image=gcr.io/cloudrun/button&cloudshell_git_repo=https://github.com/doccano/doccano.git&cloudshell_git_branch=CloudRunButton)  | -->
+| Service | Button                                                                                                                                                                                                                                                                                                                   |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --- |
+| AWS[^1] | [![AWS CloudFormation Launch Stack SVG Button](https://cdn.rawgit.com/buildkite/cloudformation-launch-stack-button-svg/master/launch-stack.svg)](https://console.aws.amazon.com/cloudformation/home?#/stacks/new?stackName=doccano&templateURL=https://doccano.s3.amazonaws.com/public/cloudformation/template.aws.yaml) |
+| Heroku  | [![Deploy](https://www.herokucdn.com/deploy/button.svg)](https://dashboard.heroku.com/new?template=https%3A%2F%2Fgithub.com%2Fdoccano%2Fdoccano)                                                                                                                                                                         |
+| <!--    | GCP[^2]                                                                                                                                                                                                                                                                                                                  | [![GCP Cloud Run PNG Button](https://storage.googleapis.com/gweb-cloudblog-publish/images/run_on_google_cloud.max-300x300.png)](https://console.cloud.google.com/cloudshell/editor?shellonly=true&cloudshell_image=gcr.io/cloudrun/button&cloudshell_git_repo=https://github.com/doccano/doccano.git&cloudshell_git_branch=CloudRunButton) | --> |
 
 > [^1]: (1) EC2 KeyPair cannot be created automatically, so make sure you have an existing EC2 KeyPair in one region. Or [create one yourself](https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/ec2-key-pairs.html#having-ec2-create-your-key-pair). (2) If you want to access doccano via HTTPS in AWS, here is an [instruction](https://github.com/doccano/doccano/wiki/HTTPS-setting-for-doccano-in-AWS).
+
 <!-- > [^2]: Although this is a very cheap option, it is only suitable for very small teams (up to 80 concurrent requests). Read more on [Cloud Run docs](https://cloud.google.com/run/docs/concepts). -->
 
 ## FAQ
@@ -260,25 +260,26 @@ Here are some tips might be helpful. [How to Contribute to Doccano Project](http
 
 For help and feedback, feel free to contact [the author](https://github.com/Hironsan).
 
-
 ## Build your own container
-from root dir `doccano/` run 
+
+from root dir `doccano/` run
+
 - `docker build --no-cache --progress=plain --file ./docker/Dockerfile.prod --platform=linux/amd64 -t doccano:be_20240813 ./`
 - `docker build --no-cache --progress=plain --file ./docker/Dockerfile.nginx --platform=linux/amd64 -t doccano:fe_20240813 ./`
-
 
 test:
 `docker build --no-cache --progress=plain -t doccano:20230911 ./docker/docker-frontend/  &> build.log`
 
-
 ## Run in Docker compose
+
 from the `/` root forder:
+
 - sudo docker-compose -f docker/docker-compose.prod.yml ps
 - sudo docker-compose -f docker/docker-compose.prod.yml up -d
 - docker-compose -f docker/docker-compose.prod.yml --env-file .env up (not tried yet)
 
-
 ## CREATE AWS ENVIRONMENT:
+
 Doing this in us-east-1 - Virginia and used the base name `doccano`, so for instance `doccano-vpc`, `doccano-sg` etc etc
 
 - Create Secrets
@@ -293,12 +294,15 @@ Doing this in us-east-1 - Virginia and used the base name `doccano`, so for inst
 - Update SSL Cert and listeners
 
 ### Populate Secrets needed by the EC2
+
 - add useful secrets to secrets manager:
   - quay_io_creds (quay.io login creds)
   - doccano_creds (all the information needed in the .env file, mostly doccano and DB credentials)
 
 ### Create VPC
+
 Select the following options:
+
 - VPC and more
 - pick your CIDR block and name (`doccano-vpc`)
 - 2 availbiulity zones, 2 private, 2 public subnets
@@ -306,16 +310,19 @@ Select the following options:
 - Leave the other options as they are
 
 ### Create Security Group for ALB
+
 - `doccano-alb-sg`
 - select `doccano-vpc`
 - create security group for ALB listen to all from 80 and 443
 - Maybe restrict to UChicago IPs for now?
 
 ### Create Target Group
-- create target group for ALB (type instances, name `doccano-target-group`, protocol 80, http1, health check: /) 
+
+- create target group for ALB (type instances, name `doccano-target-group`, protocol 80, http1, health check: /)
 - Create button, add instances later
 
 ### Create ALB
+
 - name (`doccano-alb`)
 - internet facing
 - ipv4
@@ -326,6 +333,7 @@ Select the following options:
 - click on create
 
 ### Create RDS psql instance
+
 - psql
 - 13.13
 - production
@@ -338,36 +346,41 @@ Select the following options:
 - doccano vpc
 - force to create a new DB subnet group
 - doccano vpc default sec group
-- 
+-
 
 ### Create EC2 instance
+
 - name= doccano-ec2-20240813-1, Amazon Linux 2023 AMI, t3.medium
 - select key pair
 - select doccano VPC, private subnet
 - No public IP, existing security group 'default' for the doccano VPC
 - 40gb gp3
--  previously created role ec2_secrets_manager_role ( or create it if not created previously. Give EC2 read permission on the secrets manager with policy SecretsManagerReadWrite and trust relationship to EC2, as well as CloudWatchLogsFullAccess to push the docker logs to cloudwatch) as instance profile. 
+- previously created role ec2_secrets_manager_role ( or create it if not created previously. Give EC2 read permission on the secrets manager with policy SecretsManagerReadWrite and trust relationship to EC2, as well as CloudWatchLogsFullAccess to push the docker logs to cloudwatch) as instance profile.
 - update ec2_user_data.sh script
 - click on create
 
 ### Add instance/s to the target group
+
 and add the ec2 created previously
-  - For some reason if the instance is only internal it will now turn healthy in the target group. You can just attach a public IP, wait 2/3 minutes for it to turn healthy and then you can remove the elastic IP. That seems to be solving the issue. (TRY added ALB's security group on port 80 in EC2's security group. By doing this, the issue will be resolved.)
+
+- For some reason if the instance is only internal it will now turn healthy in the target group. You can just attach a public IP, wait 2/3 minutes for it to turn healthy and then you can remove the elastic IP. That seems to be solving the issue. (TRY added ALB's security group on port 80 in EC2's security group. By doing this, the issue will be resolved.)
 
 ### Update SSL Cert and listeners
+
 - get a cert from certificate manager for the ALB
 - update the DNS provider with the CNAME of the ALB
 - add certificate to the HTTPS 443 listener in the ALB and point to the target group
 - add listener to listen to 80 and redirect (redirect to url) 301 to 443 - Redirect to HTTPS://#{host}:443/#{path}?#{query}
 
 ### Deploy new version
+
 - Update the ec2_user_data.sh file with the new tag
 - Repeat the step `Create EC2 instance`
 - Repeat the step `Add instance/s to the target group`
 - Remove old instance from the target group
 - Terminate old instance
 
-
 # Debug psql and install on machine when ssh from bastion host
+
 - sudo dnf search postgresql
 - sudo dnf install -y postgresql15
