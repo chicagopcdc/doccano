@@ -25,6 +25,7 @@ from django.urls import include, path, re_path
 from django.views.static import serve
 from drf_yasg import openapi
 from drf_yasg.views import get_schema_view
+from rest_framework import permissions
 
 schema_view = get_schema_view(
     openapi.Info(
@@ -34,9 +35,11 @@ schema_view = get_schema_view(
         license=openapi.License(name="MIT License"),
     ),
     public=True,
+    permission_classes=(permissions.IsAuthenticated,),
 )
 
 urlpatterns = []
+
 if settings.DEBUG or os.environ.get("STANDALONE", False):
     static_dir = Path(__file__).resolve().parent.parent / "client" / "dist"
     # For showing images and audios in the case of pip and Docker.
@@ -67,6 +70,11 @@ urlpatterns += [
     path("v1/projects/<int:project_id>/", include("examples.urls")),
     path("v1/projects/<int:project_id>/", include("labels.urls")),
     path("v1/projects/<int:project_id>/", include("label_types.urls")),
+    path("v1/projects/<int:project_id>/", include("label_types.urls")),
+    path("v1/projects/", include("projects.urls")),
     path("swagger/", schema_view.with_ui("swagger", cache_timeout=0), name="schema-swagger-ui"),
-    re_path("", TemplateView.as_view(template_name="index.html")),
+    re_path(
+        r"^(?!media/)(?!static/).*",
+        TemplateView.as_view(template_name="index.html"),
+    ),
 ]
