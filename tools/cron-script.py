@@ -14,14 +14,14 @@ import requests
 # TODO GEAR-567
 DOCCANO_URL = os.getenv("DOCCANO_URL", "http://localhost").rstrip("/")
 
-USERNAME = os.getenv("DOCCANO_USERNAME", "admin") # Required
-PASSWORD = os.getenv("DOCCANO_PASSWORD", "changeme") # Required
+USERNAME = os.getenv("DOCCANO_USERNAME", "admin")  # Required
+PASSWORD = os.getenv("DOCCANO_PASSWORD", "changeme")  # Required
 
-PROJECT_NAME = os.getenv("DOCCANO_PROJECT_NAME") # Required
-PROJECT_TYPE = os.getenv("DOCCANO_PROJECT_TYPE", "SequenceLabeling") # Required + Default value set
-PROJECT_DESCRIPTION = os.getenv("DOCCANO_PROJECT_DESCRIPTION", "") # Default value set
-PROJECT_GUIDELINE = os.getenv("DOCCANO_PROJECT_GUIDELINE", "") # Default value set
-PROJECT_RESOURCETYPE = os.getenv("DOCCANO_PROJECT_RESOURCETYPE", "SequenceLabelingProject") # Required + Default value set
+PROJECT_NAME = os.getenv("DOCCANO_PROJECT_NAME")  # Required
+PROJECT_TYPE = os.getenv("DOCCANO_PROJECT_TYPE", "SequenceLabeling")  # Required + Default value set
+PROJECT_DESCRIPTION = os.getenv("DOCCANO_PROJECT_DESCRIPTION", "")  # Default value set
+PROJECT_GUIDELINE = os.getenv("DOCCANO_PROJECT_GUIDELINE", "")  # Default value set
+PROJECT_RESOURCETYPE = os.getenv("DOCCANO_PROJECT_RESOURCETYPE", "SequenceLabelingProject")  # Required + Default value set
 
 # Hot folder
 ANNOTATIONS_DIR = os.getenv("DOCCANO_ANNOTATIONS_DIR", "annotations")
@@ -35,7 +35,7 @@ CREATE_PROJECT_IF_MISSING = os.getenv(
     "DOCCANO_CREATE_PROJECT_IF_MISSING", "false"
 ).lower() in ("1", "true", "yes")
 
-SESSION = requests.Session() # for cookie sessions, like the csrf
+SESSION = requests.Session()  # for cookie sessions, like the csrf
 TIMEOUT = (5, 30)  # (connect, read)
 
 
@@ -266,6 +266,7 @@ def get_or_create_project(csrf: str) -> Dict[str, Any]:
         "DOCCANO_CREATE_PROJECT_IF_MISSING=true."
     )
 
+
 #
 # LABEL EXTRACTION FROM ANNOTATIONS
 #
@@ -326,6 +327,7 @@ def load_label_specs_from_file(path: str) -> List[Dict[str, Any]]:
     if not isinstance(data, list):
         raise ValueError(f"Labels file must contain a list, got {type(data)}")
     return data
+
 
 #
 # LABEL SYNC
@@ -420,6 +422,7 @@ def sync_labels(csrf: str, project_id: int, label_specs: List[Dict[str, Any]]) -
                 print(f"[INFO] Updated label '{text}' (id={label_id}).")
 
     print(f"[INFO] Label sync complete. Created: {created}, Updated: {updated}.")
+
 
 #
 # MAIN
