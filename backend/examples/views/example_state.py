@@ -10,7 +10,12 @@ from rest_framework.permissions import IsAuthenticated
 from api.gearbox_client import submit_to_gearbox
 from data_export.models import ExportedExample
 from data_export.pipeline.dataset import Dataset
-from data_export.pipeline.factories import create_comment, create_formatter, create_labels, create_writer
+from data_export.pipeline.factories import (
+    create_comment,
+    create_formatter,
+    create_labels,
+    create_writer,
+)
 from data_export.pipeline.services import ExportApplicationService
 from examples.models import Example, ExampleState
 from examples.serializers import ExampleStateSerializer
