@@ -44,17 +44,21 @@ def _transform_to_gearbox_format(jsonl_bytes: bytes) -> bytes:
         for entry in raw_labels:
             start_offset, end_offset, label_name = entry[0], entry[1], entry[2]
             meta = entry[3] if len(entry) > 3 else {}
-            entities.append({
-                "start_offset": start_offset,
-                "end_offset": end_offset,
-                "label": label_name,
-                "meta": meta,
-            })
-            pre_annotated.append({
-                "span": [start_offset, end_offset, label_name],
-                "matched_models": meta.get("matched_models"),
-                "is_standard_gb_var": meta.get("is_standard_gb_var"),
-            })
+            entities.append(
+                {
+                    "start_offset": start_offset,
+                    "end_offset": end_offset,
+                    "label": label_name,
+                    "meta": meta,
+                }
+            )
+            pre_annotated.append(
+                {
+                    "span": [start_offset, end_offset, label_name],
+                    "matched_models": meta.get("matched_models"),
+                    "is_standard_gb_var": meta.get("is_standard_gb_var"),
+                }
+            )
         obj["entities"] = entities
         obj["pre_annotated"] = pre_annotated
         out.append(json.dumps(obj))
