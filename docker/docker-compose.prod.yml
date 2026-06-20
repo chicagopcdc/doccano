@@ -16,6 +16,10 @@ services:
       ALLOW_SIGNUP: "False"
       DEBUG: "False"
       DJANGO_SETTINGS_MODULE: "config.settings.production"
+      FENCE_CLIENT_ID: "${FENCE_CLIENT_ID}"
+      FENCE_CLIENT_SECRET: "${FENCE_CLIENT_SECRET}"
+      FENCE_TOKEN_URL: "${FENCE_TOKEN_URL}"
+      GEARBOX_RAW_CRITERIA_URL: "${GEARBOX_RAW_CRITERIA_URL}"
     depends_on:
       - postgres
     networks:
