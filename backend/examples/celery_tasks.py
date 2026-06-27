@@ -1,5 +1,4 @@
 import json
-import os
 import tempfile
 
 import requests
@@ -79,12 +78,10 @@ def submit_example_to_gearbox(example_id, project_id):
     writer = create_writer("JSONL")
 
     service = ExportApplicationService(dataset, formatters, writer)
-    with tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False) as tmp:
-        tmp_path = tmp.name
-    service.export(tmp_path)
-    with open(tmp_path, "rb") as f:
-        jsonl_bytes = f.read()
-    os.unlink(tmp_path)
+    with tempfile.NamedTemporaryFile(suffix=".jsonl") as tmp:
+        service.export(tmp.name)
+        tmp.seek(0)
+        jsonl_bytes = tmp.read()
 
     jsonl_bytes = _transform_to_gearbox_format(jsonl_bytes)
     submit_to_gearbox(jsonl_bytes, filename=f"example_{example.pk}.jsonl")
