@@ -10,6 +10,7 @@ def get_access_token():
         settings.FENCE_TOKEN_URL,
         data={"grant_type": "client_credentials", "scope": "openid user"},
         auth=(settings.FENCE_CLIENT_ID, settings.FENCE_CLIENT_SECRET),
+        timeout=30,
     )
     response.raise_for_status()
     return response.json()["access_token"]
@@ -27,6 +28,7 @@ def submit_to_gearbox(jsonl_content: bytes, filename: str = "annotations.jsonl")
         settings.GEARBOX_RAW_CRITERIA_URL,
         headers={"Authorization": f"Bearer {token}"},
         files={"file": ("annotations.zip", zip_buffer, "application/zip")},
+        timeout=30,
     )
     response.raise_for_status()
     return response
