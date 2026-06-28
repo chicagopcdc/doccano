@@ -14,8 +14,11 @@ import requests
 # TODO GEAR-567
 DOCCANO_URL = os.getenv("DOCCANO_URL", "http://localhost").rstrip("/")
 
-USERNAME = os.getenv("DOCCANO_USERNAME", "admin")  # Required
-PASSWORD = os.getenv("DOCCANO_PASSWORD", "changeme")  # Required
+USERNAME = os.getenv("DOCCANO_USERNAME")  # Required
+PASSWORD = os.getenv("DOCCANO_PASSWORD")  # Required
+
+# Populated at runtime by login(), then reused for every request.
+API_TOKEN: Optional[str] = None
 
 PROJECT_NAME = os.getenv("DOCCANO_PROJECT_NAME")  # Required
 PROJECT_TYPE = os.getenv("DOCCANO_PROJECT_TYPE", "SequenceLabeling")  # Required + Default value set
@@ -35,19 +38,19 @@ CREATE_PROJECT_IF_MISSING = os.getenv(
     "DOCCANO_CREATE_PROJECT_IF_MISSING", "false"
 ).lower() in ("1", "true", "yes")
 
-SESSION = requests.Session()  # for cookie sessions, like the csrf
+SESSION = requests.Session()
 TIMEOUT = (5, 30)  # (connect, read)
 
 
-# AUTH: LOGIN USING SESSION + CSRF (like the frontend)
-# TODO GEAR-567
-def login_with_session(username: str, password: str) -> str:
+# AUTH: LOG IN ONCE TO EXCHANGE USERNAME/PASSWORD FOR A DRF TOKEN
+def login(username: str, password: str) -> str:
     """
     Log into doccano via /v1/auth/login/ using username/password.
 
-    This uses session-based auth:
-      - SESSION will hold 'sessionid' and 'csrftoken' cookies.
-      - Return csrftoken so callers can send X-CSRFToken for POST/PUT.
+    dj_rest_auth's LoginView returns the user's DRF authtoken as
+    {"key": "<token>"} (it sets a session cookie, which
+    we ignore and every subsequent request authenticates with the
+    returned token).
     """
     url = f"{DOCCANO_URL}/v1/auth/login/"
     resp = SESSION.post(
@@ -62,37 +65,29 @@ def login_with_session(username: str, password: str) -> str:
         print(f"[ERROR] Login failed: {exc} - {resp.text}", file=sys.stderr)
         raise
 
-    csrftoken = resp.cookies.get("csrftoken") or SESSION.cookies.get("csrftoken")
-    if not csrftoken:
-        print(
-            "[WARN] Login succeeded but no csrftoken cookie found. "
-            "POST/PUT may fail with CSRF errors.",
-            file=sys.stderr,
-        )
-    else:
-        print("[INFO] Logged in and obtained csrftoken.")
+    token = resp.json().get("key")
+    if not token:
+        raise RuntimeError(f"Login succeeded but no 'key' in response: {resp.text}")
 
-    return csrftoken or ""
+    print("[INFO] Logged in and obtained API token.")
+    return token
 
 
-def get_headers(csrf: Optional[str] = None) -> Dict[str, str]:
+def get_headers() -> Dict[str, str]:
     """
-    Build headers for requests.
-
-    - For GET/HEAD, CSRF is not required.
-    - For POST/PUT/DELETE with SessionAuthentication, CSRF is required.
+    Build headers for requests, authenticated via DRF TokenAuthentication.
     """
-    headers = {
+    if not API_TOKEN:
+        raise RuntimeError("API_TOKEN is not set - call login() first.")
+    return {
         "Accept": "application/json",
+        "Authorization": f"Token {API_TOKEN}",
     }
-    if csrf:
-        headers["X-CSRFToken"] = csrf
-    return headers
 
 #
 # PROJECT HELPERS
 #
-def fetch_projects(csrf: str) -> List[Dict[str, Any]]:
+def fetch_projects() -> List[Dict[str, Any]]:
     """
     Fetch projects the same way the frontend does:
     GET /v1/projects?limit=10&offset=0&q=&ordering=created_at
@@ -107,7 +102,7 @@ def fetch_projects(csrf: str) -> List[Dict[str, Any]]:
     }
     resp = SESSION.get(
         url,
-        headers=get_headers(),  # GET doesn't need CSRF header
+        headers=get_headers(),
         params=params,
         timeout=TIMEOUT,
     )
@@ -139,7 +134,7 @@ def find_project_by_name(projects: List[Dict[str, Any]], name: str) -> Optional[
     return None
 
 
-def create_project(csrf: str) -> Dict[str, Any]:
+def create_project() -> Dict[str, Any]:
     """
     Create a new project using PROJECT_* settings.
     """
@@ -163,7 +158,7 @@ def create_project(csrf: str) -> Dict[str, Any]:
     resp = SESSION.post(
         url,
         json=payload,
-        headers=get_headers(csrf),
+        headers=get_headers(),
         timeout=TIMEOUT,
     )
     if resp.status_code not in (200, 201):
@@ -178,7 +173,7 @@ def create_project(csrf: str) -> Dict[str, Any]:
     return project
 
 
-def update_project_if_needed(csrf: str, project: Dict[str, Any]) -> Dict[str, Any]:
+def update_project_if_needed(project: Dict[str, Any]) -> Dict[str, Any]:
     """
     Compare project description/guideline and update if they differ
     from the configured values.
@@ -222,7 +217,7 @@ def update_project_if_needed(csrf: str, project: Dict[str, Any]) -> Dict[str, An
     resp = SESSION.put(
         url,
         json=updated_payload,
-        headers=get_headers(csrf),
+        headers=get_headers(),
         timeout=TIMEOUT,
     )
     if resp.status_code not in (200, 202):
@@ -238,14 +233,14 @@ def update_project_if_needed(csrf: str, project: Dict[str, Any]) -> Dict[str, An
     return updated
 
 
-def get_or_create_project(csrf: str) -> Dict[str, Any]:
+def get_or_create_project() -> Dict[str, Any]:
     """
     Find an existing project by name. If not found and
     CREATE_PROJECT_IF_MISSING is true, create it.
 
     Otherwise, fail with a clear error so the user can create it via the UI.
     """
-    projects = fetch_projects(csrf)
+    projects = fetch_projects()
     existing = find_project_by_name(projects, PROJECT_NAME)
     if existing:
         print(f"[INFO] Found existing project '{PROJECT_NAME}' (id={existing['id']}).")
@@ -256,7 +251,7 @@ def get_or_create_project(csrf: str) -> Dict[str, Any]:
             f"[INFO] Project '{PROJECT_NAME}' not found. "
             "CREATE_PROJECT_IF_MISSING is true – creating it."
         )
-        return create_project(csrf)
+        return create_project()
 
     raise RuntimeError(
         f"Project '{PROJECT_NAME}' not found. "
@@ -332,7 +327,7 @@ def load_label_specs_from_file(path: str) -> List[Dict[str, Any]]:
 #
 # LABEL SYNC
 #
-def fetch_project_labels(csrf: str, project_id: int) -> List[Dict[str, Any]]:
+def fetch_project_labels(project_id: int) -> List[Dict[str, Any]]:
     """
     Fetch label definitions (span types) for a project.
 
@@ -356,8 +351,8 @@ def fetch_project_labels(csrf: str, project_id: int) -> List[Dict[str, Any]]:
         )
 
 
-def sync_labels(csrf: str, project_id: int, label_specs: List[Dict[str, Any]]) -> None:
-    existing_labels = fetch_project_labels(csrf, project_id)
+def sync_labels(project_id: int, label_specs: List[Dict[str, Any]]) -> None:
+    existing_labels = fetch_project_labels(project_id)
     by_text = {lbl["text"]: lbl for lbl in existing_labels}
 
     created = 0
@@ -384,7 +379,7 @@ def sync_labels(csrf: str, project_id: int, label_specs: List[Dict[str, Any]]) -
             resp = SESSION.post(
                 url,
                 json=spec,
-                headers=get_headers(csrf),
+                headers=get_headers(),
                 timeout=TIMEOUT,
             )
             if resp.status_code not in (200, 201):
@@ -407,7 +402,7 @@ def sync_labels(csrf: str, project_id: int, label_specs: List[Dict[str, Any]]) -
             resp = SESSION.put(
                 url,
                 json=payload,
-                headers=get_headers(csrf),
+                headers=get_headers(),
                 timeout=TIMEOUT,
             )
             if resp.status_code not in (200, 202):
@@ -428,23 +423,28 @@ def sync_labels(csrf: str, project_id: int, label_specs: List[Dict[str, Any]]) -
 # MAIN
 #
 def main() -> int:
-    # Auth in
+    global API_TOKEN
+
+    if not USERNAME or not PASSWORD:
+        print("[FATAL] DOCCANO_USERNAME and DOCCANO_PASSWORD are required.", file=sys.stderr)
+        return 1
+
     try:
-        csrf = login_with_session(USERNAME, PASSWORD)
+        API_TOKEN = login(USERNAME, PASSWORD)
     except Exception as exc:
         print(f"[FATAL] Could not log in: {exc}", file=sys.stderr)
         return 1
 
     # Create project if specified
     try:
-        project = get_or_create_project(csrf)
+        project = get_or_create_project()
     except Exception as exc:
         print(f"[FATAL] Could not get or create project: {exc}", file=sys.stderr)
         return 1
 
     # Update project if needed
     try:
-        project = update_project_if_needed(csrf, project)
+        project = update_project_if_needed(project)
     except Exception as exc:
         print(f"[ERROR] Failed to update project metadata: {exc}", file=sys.stderr)
 
@@ -476,7 +476,7 @@ def main() -> int:
         return 0
 
     try:
-        sync_labels(csrf, project["id"], label_specs)
+        sync_labels(project["id"], label_specs)
     except Exception as exc:
         print(f"[ERROR] Label sync failed: {exc}", file=sys.stderr)
         return 1
