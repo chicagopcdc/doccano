@@ -11,7 +11,8 @@ function toModel(item: { [key: string]: any }): ExampleItem {
     item.comment_count,
     item.filename,
     item.is_confirmed,
-    item.upload_name
+    item.upload_name,
+    item.assignments
   )
 }
 
@@ -25,6 +26,51 @@ function toPayload(item: ExampleItem): { [key: string]: any } {
   }
 }
 
+/**
+ * Extracts a parameter value from a query string.
+ *
+ * @param {string} q - The query string to extract the parameter from.
+ * @param {string} name - The name of the parameter to extract.
+ * @return {Array} - A tuple containing the updated query string and the extracted parameter value.
+ *                  - If the parameter is not found, the extracted value will be null.
+ */
+function extractParamFromQuery(q: string, name: string): [string, string | null] {
+  const pattern = new RegExp(`${name}:(".+?"|\\S+)`)
+  if (pattern.test(q)) {
+    const value = pattern.exec(q)![1]
+    q = q.replace(pattern, '')
+    return [q, value]
+  }
+  return [q, null]
+}
+
+function buildQueryParams(
+  limit: any,
+  offset: string,
+  q: string,
+  isChecked: string,
+  ordering: string
+): string {
+  const params = new URLSearchParams()
+  params.append('limit', limit)
+  params.append('offset', offset)
+  params.append('confirmed', isChecked)
+  params.append('ordering', ordering)
+
+  const customParams = ['label', 'assignee']
+  let updatedQuery: string = q
+  customParams.forEach((param: string) => {
+    let value: string | null
+    ;[updatedQuery, value] = extractParamFromQuery(updatedQuery, param)
+    if (value !== null) {
+      params.append(param, value)
+    }
+  })
+
+  params.append('q', updatedQuery)
+  return params.toString()
+}
+
 export class APIExampleRepository implements ExampleRepository {
   constructor(private readonly request = ApiService) {}
 
@@ -32,7 +78,9 @@ export class APIExampleRepository implements ExampleRepository {
     projectId: string,
     { limit = '10', offset = '0', q = '', isChecked = '', ordering = '' }: SearchOption
   ): Promise<ExampleItemList> {
-    const url = `/projects/${projectId}/examples?limit=${limit}&offset=${offset}&q=${q}&confirmed=${isChecked}&ordering=${ordering}`
+    // @ts-ignore
+    const params = buildQueryParams(limit, offset, q, isChecked, ordering)
+    const url = `/projects/${projectId}/examples?${params}`
     const response = await this.request.get(url)
     return new ExampleItemList(
       response.data.count,

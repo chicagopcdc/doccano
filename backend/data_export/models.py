@@ -22,7 +22,17 @@ class ExportedExample(Example):
     objects = ExportedExampleManager()
 
     def to_dict(self, is_text_project=True) -> Dict[str, Any]:
-        return {"id": self.id, DATA: self.text if is_text_project else self.upload_name, **self.meta}
+        example = {
+            DATA: self.text if is_text_project else self.upload_name,
+            "id": self.id,
+            "uuid": self.uuid.hex,
+            **self.meta,
+        }
+        if "meta" in example:
+            del example["meta"]
+        if "label" in example:
+            example["entities"] = example.pop("label")
+        return example
 
     class Meta:
         proxy = True
@@ -56,10 +66,16 @@ class ExportedSpan(Span):
             "label": self.label.text,
             "start_offset": self.start_offset,
             "end_offset": self.end_offset,
+            "meta": self.meta,
         }
 
     def to_tuple(self):
-        return self.start_offset, self.end_offset, self.label.text
+        return (
+            self.start_offset,
+            self.end_offset,
+            self.label.text,
+            self.meta,
+        )
 
     class Meta:
         proxy = True

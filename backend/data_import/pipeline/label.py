@@ -1,8 +1,8 @@
 import abc
 import uuid
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
-from pydantic import UUID4, BaseModel, ConstrainedStr, NonNegativeInt, root_validator
+from pydantic import UUID4, BaseModel, NonNegativeInt, constr, root_validator
 
 from .label_types import LabelTypes
 from examples.models import Example
@@ -13,10 +13,6 @@ from labels.models import Relation as RelationModel
 from labels.models import Span as SpanModel
 from labels.models import TextLabel as TextLabelModel
 from projects.models import Project
-
-
-class NonEmptyStr(ConstrainedStr):
-    min_length = 1
 
 
 class Label(BaseModel, abc.ABC):
@@ -30,7 +26,7 @@ class Label(BaseModel, abc.ABC):
 
     @abc.abstractmethod
     def __lt__(self, other):
-        raise NotImplementedError()
+        return NotImplemented
 
     @classmethod
     def parse(cls, example_uuid: UUID4, obj: Any):
@@ -49,14 +45,14 @@ class Label(BaseModel, abc.ABC):
 
 
 class CategoryLabel(Label):
-    label: NonEmptyStr
+    label: constr(min_length=1)  # type: ignore
 
     def __lt__(self, other):
         return self.label < other.label
 
     @classmethod
     def parse(cls, example_uuid: UUID4, obj: Any):
-        return cls(example_uuid=example_uuid, label=obj)
+        return cls(example_uuid=example_uuid, label=obj)  # type: ignore
 
     def create_type(self, project: Project) -> Optional[LabelType]:
         return CategoryType(text=self.label, project=project)
@@ -66,14 +62,15 @@ class CategoryLabel(Label):
 
 
 class SpanLabel(Label):
-    label: NonEmptyStr
+    label: constr(min_length=1)  # type: ignore
     start_offset: NonNegativeInt
     end_offset: NonNegativeInt
+    meta: Dict[str, Any]
 
     def __lt__(self, other):
         return self.start_offset < other.start_offset
 
-    @root_validator
+    @root_validator(skip_on_failure=True)
     def check_start_offset_is_less_than_end_offset(cls, values):
         start_offset, end_offset = values.get("start_offset"), values.get("end_offset")
         if start_offset >= end_offset:
@@ -83,11 +80,17 @@ class SpanLabel(Label):
     @classmethod
     def parse(cls, example_uuid: UUID4, obj: Any):
         if isinstance(obj, list) or isinstance(obj, tuple):
-            columns = ["start_offset", "end_offset", "label"]
-            obj = zip(columns, obj)
-            return cls(example_uuid=example_uuid, **dict(obj))
+            columns = ["start_offset", "end_offset", "label", "meta"]
+            obj = dict(zip(columns, obj))
+            if "meta" in obj:
+                return cls(example_uuid=example_uuid, **obj)
+            else:
+                return cls(example_uuid=example_uuid, **dict(obj, meta={}))
         elif isinstance(obj, dict):
-            return cls(example_uuid=example_uuid, **obj)
+            if "meta" in obj:
+                return cls(example_uuid=example_uuid, **obj)
+            else:
+                return cls(example_uuid=example_uuid, **dict(obj, meta={}))
         raise ValueError("SpanLabel.parse()")
 
     def create_type(self, project: Project) -> Optional[LabelType]:
@@ -101,18 +104,19 @@ class SpanLabel(Label):
             start_offset=self.start_offset,
             end_offset=self.end_offset,
             label=types[self.label],
+            meta=self.meta,
         )
 
 
 class TextLabel(Label):
-    text: NonEmptyStr
+    text: constr(min_length=1)  # type: ignore
 
     def __lt__(self, other):
         return self.text < other.text
 
     @classmethod
     def parse(cls, example_uuid: UUID4, obj: Any):
-        return cls(example_uuid=example_uuid, text=obj)
+        return cls(example_uuid=example_uuid, text=obj)  # type: ignore
 
     def create_type(self, project: Project) -> Optional[LabelType]:
         return None
@@ -124,7 +128,7 @@ class TextLabel(Label):
 class RelationLabel(Label):
     from_id: int
     to_id: int
-    type: NonEmptyStr
+    type: constr(min_length=1)  # type: ignore
 
     def __lt__(self, other):
         return self.from_id < other.from_id

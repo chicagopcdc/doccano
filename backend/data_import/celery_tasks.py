@@ -58,7 +58,6 @@ def import_dataset(user_id, project_id, file_format: str, upload_ids: List[str],
             FileName(full_path=tu.get_file_path(), generated_name=tu.file.name, upload_name=tu.upload_name)
             for tu in temporary_uploads
         ]
-
         dataset = load_dataset(task, fmt, filenames, project, **kwargs)
         dataset.save(user, batch_size=settings.IMPORT_BATCH_SIZE)
         upload_to_store(temporary_uploads)

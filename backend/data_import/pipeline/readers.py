@@ -68,8 +68,13 @@ class Reader(BaseReader):
         for filename in self.filenames:
             rows = self.parser.parse(filename.full_path)
             for row in rows:
+                document_uuid = uuid.uuid4()
+                if "uuid" in row:
+                    # Use uuid from upload if present.
+                    document_uuid = uuid.UUID(row["uuid"])
+                    del row["uuid"]
                 yield {
-                    UUID_COLUMN: uuid.uuid4(),
+                    UUID_COLUMN: document_uuid,
                     FILE_NAME_COLUMN: filename.generated_name,
                     UPLOAD_NAME_COLUMN: filename.upload_name,
                     **row,

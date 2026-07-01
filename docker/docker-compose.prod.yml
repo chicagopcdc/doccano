@@ -2,7 +2,7 @@ version: "3.7"
 services:
 
   backend:
-    image: doccano/doccano:backend
+    image: quay.io/pcdc/doccano:be_20250618
     volumes:
       - static_volume:/backend/staticfiles
       - media:/backend/media
@@ -12,7 +12,7 @@ services:
       ADMIN_PASSWORD: "${ADMIN_PASSWORD}"
       ADMIN_EMAIL: ${ADMIN_EMAIL}
       CELERY_BROKER_URL: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq"
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=require"
       ALLOW_SIGNUP: "False"
       DEBUG: "False"
       DJANGO_SETTINGS_MODULE: "config.settings.production"
@@ -23,7 +23,7 @@ services:
       - network-frontend
 
   celery:
-    image: doccano/doccano:backend
+    image: quay.io/pcdc/doccano:be_20250618
     volumes:
       - media:/backend/media
       - tmp_file:/backend/filepond-temp-uploads
@@ -31,7 +31,7 @@ services:
     environment:
       PYTHONUNBUFFERED: "1"
       CELERY_BROKER_URL: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq"
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=require"
       DJANGO_SETTINGS_MODULE: "config.settings.production"
     depends_on:
       - postgres
@@ -40,12 +40,12 @@ services:
       - network-backend
 
   flower:
-    image: doccano/doccano:backend
+    image: quay.io/pcdc/doccano:be_20250618
     entrypoint: ["/opt/bin/prod-flower.sh"]
     environment:
       PYTHONUNBUFFERED: "1"
       CELERY_BROKER_URL: "amqp://${RABBITMQ_DEFAULT_USER}:${RABBITMQ_DEFAULT_PASS}@rabbitmq"
-      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}?sslmode=disable"
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:5432/${POSTGRES_DB}?sslmode=require"
       DJANGO_SETTINGS_MODULE: "config.settings.production"
       FLOWER_BASIC_AUTH: "${FLOWER_BASIC_AUTH}" # Format "username:password"
     depends_on:
@@ -67,7 +67,7 @@ services:
       - network-backend
 
   nginx:
-    image: doccano/doccano:frontend
+    image: quay.io/pcdc/doccano:fe_20250618
     command: >
       /bin/sh -c
       "envsubst '

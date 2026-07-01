@@ -7,6 +7,7 @@
       :entities="entities"
       :entity-labels="entityLabels"
       :relations="relations"
+      :max-label-length="maxLabelLength"
       :relation-labels="relationLabels"
       :allow-overlapping="allowOverlapping"
       :grapheme-mode="graphemeMode"
@@ -18,6 +19,7 @@
       @contextmenu:relation="deleteRelation"
     />
     <labeling-menu
+      v-if="entityMenuOpened"
       :opened="entityMenuOpened"
       :x="x"
       :y="y"
@@ -27,6 +29,7 @@
       @click:label="addOrUpdateEntity"
     />
     <labeling-menu
+      v-if="relationMenuOpened"
       :opened="relationMenuOpened"
       :x="x"
       :y="y"
@@ -56,6 +59,10 @@ export default Vue.extend({
     dark: {
       type: Boolean,
       default: false
+    },
+    maxLabelLength: {
+      type: Number,
+      default: 200
     },
     rtl: {
       type: Boolean,

@@ -20,18 +20,7 @@ from .pipeline.readers import (
     Reader,
 )
 from label_types.models import CategoryType, LabelType, RelationType, SpanType
-from projects.models import (
-    BOUNDING_BOX,
-    DOCUMENT_CLASSIFICATION,
-    IMAGE_CAPTIONING,
-    IMAGE_CLASSIFICATION,
-    INTENT_DETECTION_AND_SLOT_FILLING,
-    SEGMENTATION,
-    SEQ2SEQ,
-    SEQUENCE_LABELING,
-    SPEECH2TEXT,
-    Project,
-)
+from projects.models import Project, ProjectType
 
 
 class Dataset(abc.ABC):
@@ -55,8 +44,12 @@ class PlainDataset(Dataset):
 
     def save(self, user: User, batch_size: int = 1000):
         for records in self.reader.batch(batch_size):
-            examples = Examples(self.example_maker.make(records))
-            examples.save()
+            update_examples, create_examples = self.example_maker.make_or_update(records)
+
+            if update_examples:
+                Examples(update_examples).save_update()
+            else:
+                Examples(create_examples).save()
 
     @property
     def errors(self) -> List[FileParseException]:
@@ -85,16 +78,30 @@ class DatasetWithSingleLabelType(Dataset):
     def save(self, user: User, batch_size: int = 1000):
         for records in self.reader.batch(batch_size):
             # create examples
-            examples = Examples(self.example_maker.make(records))
-            examples.save()
+            update_examples, create_examples = self.example_maker.make_or_update(records)
 
-            # create label types
-            labels = self.labels_class(self.label_maker.make(records), self.types)
-            labels.clean(self.project)
-            labels.save_types(self.project)
+            if update_examples:
+                update_examples_instance = Examples(update_examples)
+                update_examples_instance.save_update()
 
-            # create Labels
-            labels.save(user, examples)
+                # make label types
+                labels = self.labels_class(self.label_maker.make(records), self.types)
+
+                labels.clean(self.project)
+                labels.save_types(self.project)
+                # create Labels
+                labels.save(user, update_examples_instance)
+            else:
+                create_examples_instance = Examples(create_examples)
+                create_examples_instance.save()
+
+                # create label types
+                labels = self.labels_class(self.label_maker.make(records), self.types)
+                labels.clean(self.project)
+                labels.save_types(self.project)
+
+                # create Labels
+                labels.save(user, create_examples_instance)
 
     @property
     def errors(self) -> List[FileParseException]:
@@ -123,13 +130,6 @@ class TextClassificationDataset(DatasetWithSingleLabelType):
     labels_class = Categories
 
 
-class SequenceLabelingDataset(DatasetWithSingleLabelType):
-    data_class = TextData
-    label_class = SpanLabel
-    label_type = SpanType
-    labels_class = Spans
-
-
 class Seq2seqDataset(DatasetWithSingleLabelType):
     data_class = TextData
     label_class = TextLabel
@@ -154,25 +154,57 @@ class RelationExtractionDataset(Dataset):
     def save(self, user: User, batch_size: int = 1000):
         for records in self.reader.batch(batch_size):
             # create examples
-            examples = Examples(self.example_maker.make(records))
-            examples.save()
+            update_examples, create_examples = self.example_maker.make_or_update(records)
+            if update_examples:
+                update_examples_instance = Examples(update_examples)
+                update_examples_instance.save_update()
 
-            # create label types
-            spans = Spans(self.span_maker.make(records), self.span_types)
-            spans.clean(self.project)
-            spans.save_types(self.project)
+                # create label types
+                spans = Spans(self.span_maker.make(records), self.span_types)
+                spans.clean(self.project)
+                spans.save_types(self.project)
 
-            relations = Relations(self.relation_maker.make(records), self.relation_types)
-            relations.clean(self.project)
-            relations.save_types(self.project)
+                relations = Relations(self.relation_maker.make(records), self.relation_types)
+                relations.clean(self.project)
+                relations.save_types(self.project)
 
-            # create Labels
-            spans.save(user, examples)
-            relations.save(user, examples, spans=spans)
+                # create Labels
+                spans.save(user, update_examples_instance)
+                relations.save(user, update_examples_instance, spans=spans)
+            else:
+                create_examples_instance = Examples(create_examples)
+                create_examples_instance.save()
+
+                # create label types
+                spans = Spans(self.span_maker.make(records), self.span_types)
+                spans.clean(self.project)
+                spans.save_types(self.project)
+
+                relations = Relations(self.relation_maker.make(records), self.relation_types)
+                relations.clean(self.project)
+                relations.save_types(self.project)
+
+                # create Labels
+                spans.save(user, create_examples_instance)
+                relations.save(user, create_examples_instance, spans=spans)
 
     @property
     def errors(self) -> List[FileParseException]:
         return self.reader.errors + self.example_maker.errors + self.span_maker.errors + self.relation_maker.errors
+
+
+class SequenceLabelingDataset__LEGACY(DatasetWithSingleLabelType):
+    data_class = TextData
+    label_class = SpanLabel
+    label_type = SpanType
+    labels_class = Spans
+
+
+class SequenceLabelingDataset(RelationExtractionDataset):
+    data_class = TextData
+    label_class = SpanLabel
+    label_type = SpanType
+    labels_class = Spans
 
 
 class CategoryAndSpanDataset(Dataset):
@@ -192,21 +224,40 @@ class CategoryAndSpanDataset(Dataset):
     def save(self, user: User, batch_size: int = 1000):
         for records in self.reader.batch(batch_size):
             # create examples
-            examples = Examples(self.example_maker.make(records))
-            examples.save()
+            update_examples, create_examples = self.example_maker.make_or_update(records)
 
-            # create label types
-            categories = Categories(self.category_maker.make(records), self.category_types)
-            categories.clean(self.project)
-            categories.save_types(self.project)
+            if update_examples:
+                update_examples_instance = Examples(update_examples)
+                update_examples_instance.save_update()
 
-            spans = Spans(self.span_maker.make(records), self.span_types)
-            spans.clean(self.project)
-            spans.save_types(self.project)
+                # create label types
+                categories = Categories(self.category_maker.make(records), self.category_types)
+                categories.clean(self.project)
+                categories.save_types(self.project)
 
-            # create Labels
-            categories.save(user, examples)
-            spans.save(user, examples)
+                spans = Spans(self.span_maker.make(records), self.span_types)
+                spans.clean(self.project)
+                spans.save_types(self.project)
+
+                # create Labels
+                categories.save(user, update_examples_instance)
+                spans.save(user, update_examples_instance)
+            else:
+                create_examples_instance = Examples(create_examples)
+                create_examples_instance.save()
+
+                # create label types
+                categories = Categories(self.category_maker.make(records), self.category_types)
+                categories.clean(self.project)
+                categories.save_types(self.project)
+
+                spans = Spans(self.span_maker.make(records), self.span_types)
+                spans.clean(self.project)
+                spans.save_types(self.project)
+
+                # create Labels
+                categories.save(user, create_examples_instance)
+                spans.save(user, create_examples_instance)
 
     @property
     def errors(self) -> List[FileParseException]:
@@ -215,16 +266,17 @@ class CategoryAndSpanDataset(Dataset):
 
 def select_dataset(project: Project, task: str, file_format: Format) -> Type[Dataset]:
     mapping = {
-        DOCUMENT_CLASSIFICATION: TextClassificationDataset,
-        SEQUENCE_LABELING: SequenceLabelingDataset,
+        ProjectType.DOCUMENT_CLASSIFICATION: TextClassificationDataset,
+        ProjectType.SEQUENCE_LABELING: SequenceLabelingDataset,
+        ProjectType.SEQUENCE_LABELING_LEGACY: SequenceLabelingDataset__LEGACY,
         RELATION_EXTRACTION: RelationExtractionDataset,
-        SEQ2SEQ: Seq2seqDataset,
-        INTENT_DETECTION_AND_SLOT_FILLING: CategoryAndSpanDataset,
-        IMAGE_CLASSIFICATION: BinaryDataset,
-        IMAGE_CAPTIONING: BinaryDataset,
-        BOUNDING_BOX: BinaryDataset,
-        SEGMENTATION: BinaryDataset,
-        SPEECH2TEXT: BinaryDataset,
+        ProjectType.SEQ2SEQ: Seq2seqDataset,
+        ProjectType.INTENT_DETECTION_AND_SLOT_FILLING: CategoryAndSpanDataset,
+        ProjectType.IMAGE_CLASSIFICATION: BinaryDataset,
+        ProjectType.IMAGE_CAPTIONING: BinaryDataset,
+        ProjectType.BOUNDING_BOX: BinaryDataset,
+        ProjectType.SEGMENTATION: BinaryDataset,
+        ProjectType.SPEECH2TEXT: BinaryDataset,
     }
     if task not in mapping:
         task = project.project_type

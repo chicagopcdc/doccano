@@ -29,14 +29,15 @@ export default Vue.extend({
 
   layout: 'project',
 
-  validate({ params, query, app }) {
+  middleware: ['check-auth', 'auth', 'setCurrentProject'],
+
+  validate({ params, query, store }) {
     if (!['category', 'span', 'relation'].includes(query.type as string)) {
       return false
     }
     if (/^\d+$/.test(params.id)) {
-      return app.$services.project.findById(params.id).then((res: Project) => {
-        return res.canDefineLabel
-      })
+      const project = store.getters['projects/project'] as Project
+      return project.canDefineLabel
     }
     return false
   },
@@ -45,6 +46,7 @@ export default Vue.extend({
     return {
       editedItem: {
         text: '',
+        meta: {},
         prefixKey: null,
         suffixKey: null,
         backgroundColor: '#73D8FF',
@@ -52,6 +54,7 @@ export default Vue.extend({
       } as LabelDTO,
       defaultItem: {
         text: '',
+        meta: {},
         prefixKey: null,
         suffixKey: null,
         backgroundColor: '#73D8FF',

@@ -2,6 +2,11 @@ import colors from 'vuetify/es5/util/colors'
 import i18n from './i18n'
 
 export default {
+  generate: {
+    target: 'static',
+    devtools: true
+  },
+
   ssr: false,
   /*
    ** Headers of the page
@@ -173,6 +178,10 @@ export default {
         options: {
           name: '[path][name].[ext]'
         }
+      })
+      config.module.rules.push({
+        test: /node_modules[\\/]@flatten-js/,
+        loader: require.resolve('esbuild-loader')
       })
     }
   }

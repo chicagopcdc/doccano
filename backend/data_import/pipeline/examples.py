@@ -3,6 +3,7 @@ from typing import Dict, List
 from pydantic import UUID4
 
 from examples.models import Example
+from labels.models import Relation, Span
 
 
 class Examples:
@@ -19,3 +20,11 @@ class Examples:
     def save(self):
         examples = Example.objects.bulk_create(self.examples)
         self.uuid_to_example = {example.uuid: example for example in examples}
+
+    def save_update(self):
+        for example in self.examples:
+            # Remove spans and relationships prior to update.
+            Span.objects.all().filter(example_id=example.pk).delete()
+            Relation.objects.all().filter(example_id=example.pk).delete()
+        Example.objects.bulk_update(self.examples, ["text", "meta"])
+        self.uuid_to_example = {example.uuid: example for example in self.examples}

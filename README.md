@@ -7,17 +7,17 @@
 [![Codacy Badge](https://app.codacy.com/project/badge/Grade/35ac8625a2bc4eddbff23dbc61bc6abb)](https://www.codacy.com/gh/doccano/doccano/dashboard?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=doccano/doccano&amp;utm_campaign=Badge_Grade)
 [![doccano CI](https://github.com/doccano/doccano/actions/workflows/ci.yml/badge.svg)](https://github.com/doccano/doccano/actions/workflows/ci.yml)
 
-doccano is an open source text annotation tool for humans. It provides annotation features for text classification, sequence labeling and sequence to sequence tasks. So, you can create labeled data for sentiment analysis, named entity recognition, text summarization and so on. Just create a project, upload data and start annotating. You can build a dataset in hours.
+doccano is an open-source text annotation tool for humans. It provides annotation features for text classification, sequence labeling, and sequence to sequence tasks. You can create labeled data for sentiment analysis, named entity recognition, text summarization, and so on. Just create a project, upload data, and start annotating. You can build a dataset in hours.
 
 ## Demo
 
-You can try the [annotation demo](http://doccano.herokuapp.com).
+Try the [annotation demo](http://doccano.herokuapp.com).
 
 ![Demo image](https://raw.githubusercontent.com/doccano/doccano/master/docs/images/demo/demo.gif)
 
 ## Documentation
 
-Read the documentation at the <https://doccano.github.io/doccano/>.
+Read the documentation at <https://doccano.github.io/doccano/>.
 
 ## Features
 
@@ -30,7 +30,7 @@ Read the documentation at the <https://doccano.github.io/doccano/>.
 
 ## Usage
 
-Three options to run doccano:
+There are three options to run doccano:
 
 - pip (Python 3.8+)
 - Docker
@@ -38,7 +38,7 @@ Three options to run doccano:
 
 ### pip
 
-To install doccano, simply run:
+To install doccano, run:
 
 ```bash
 pip install doccano
@@ -50,7 +50,7 @@ By default, SQLite 3 is used for the default database. If you want to use Postgr
 pip install 'doccano[postgresql]'
 ```
 
-and set `DATABASE_URL` environment variable according to your PostgreSQL credentials:
+and set the `DATABASE_URL` environment variable according to your PostgreSQL credentials:
 
 ```bash
 DATABASE_URL="postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}?sslmode=disable"
@@ -67,7 +67,7 @@ doccano createuser --username admin --password pass
 doccano webserver --port 8000
 ```
 
-In another terminal, run the following command:
+In another terminal, run the command:
 
 ```bash
 # Start the task queue to handle file upload/download.
@@ -100,7 +100,7 @@ Go to <http://127.0.0.1:8000/>.
 
 To stop the container, run `docker container stop doccano -t 5`. All data created in the container will persist across restarts.
 
-If you want to use the latest features, please specify `nightly` tag:
+If you want to use the latest features, specify the `nightly` tag:
 
 ```bash
 docker pull doccano/doccano:nightly
@@ -108,7 +108,7 @@ docker pull doccano/doccano:nightly
 
 ### Docker Compose
 
-You need to install Git and to clone the repository:
+You need to install Git and clone the repository:
 
 ```bash
 git clone https://github.com/doccano/doccano.git
@@ -189,4 +189,116 @@ Here are some tips might be helpful. [How to Contribute to Doccano Project](http
 
 ## Contact
 
-For help and feedback, please feel free to contact [the author](https://github.com/Hironsan).
+For help and feedback, feel free to contact [the author](https://github.com/Hironsan).
+
+
+## Build your own container
+from root dir `doccano/` run 
+- `docker build --no-cache --progress=plain --file ./docker/Dockerfile.prod --platform=linux/amd64 -t doccano:be_20240813 ./`
+- `docker build --no-cache --progress=plain --file ./docker/Dockerfile.nginx --platform=linux/amd64 -t doccano:fe_20240813 ./`
+
+
+test:
+`docker build --no-cache --progress=plain -t doccano:20230911 ./docker/docker-frontend/  &> build.log`
+
+
+## Run in Docker compose
+from the `/` root forder:
+- sudo docker-compose -f docker/docker-compose.prod.yml ps
+- sudo docker-compose -f docker/docker-compose.prod.yml up -d
+- docker-compose -f docker/docker-compose.prod.yml --env-file .env up (not tried yet)
+
+
+## CREATE AWS ENVIRONMENT:
+Doing this in us-east-1 - Virginia and used the base name `doccano`, so for instance `doccano-vpc`, `doccano-sg` etc etc
+
+- Create Secrets
+- Create VPC
+- Create Security Group for ALB
+- Create Target Group
+- Create ALB
+- Create RDS
+- Populate Secrets needed by the EC2
+- Create EC2 instance
+- Add instance/s to the target group
+- Update SSL Cert and listeners
+
+### Populate Secrets needed by the EC2
+- add useful secrets to secrets manager:
+  - quay_io_creds (quay.io login creds)
+  - doccano_creds (all the information needed in the .env file, mostly doccano and DB credentials)
+
+### Create VPC
+Select the following options:
+- VPC and more
+- pick your CIDR block and name (`doccano-vpc`)
+- 2 availbiulity zones, 2 private, 2 public subnets
+- only 1 nat gateway (in 1 availability zone. We are going to deploy only in that one zone since this application doesn't need to be fault tollerant and can have some downtime. We create 2 so it will be easier to add eventually a second nat gateway down the line if we decide to.)
+- Leave the other options as they are
+
+### Create Security Group for ALB
+- `doccano-alb-sg`
+- select `doccano-vpc`
+- create security group for ALB listen to all from 80 and 443
+- Maybe restrict to UChicago IPs for now?
+
+### Create Target Group
+- create target group for ALB (type instances, name `doccano-target-group`, protocol 80, http1, health check: /) 
+- Create button, add instances later
+
+### Create ALB
+- name (`doccano-alb`)
+- internet facing
+- ipv4
+- select `doccano-vpc`
+- select the two availability zones and the 2 puvlic subnets for the ALB
+- select `doccano-alb-sg` security group as well as the VPC `default` (the default will allow full connectivity between the EC2 and the ALB)
+- listeners: listen to 443 (set 80 if you don't have a certificate already and you can update later) and forward to target group created previously (may need to refresh the page for it to show up)
+- click on create
+
+### Create RDS psql instance
+- psql
+- 13.13
+- production
+- single db
+- identifier: `doccano`
+- master username: `doccano`
+- secrets manager
+- t3.small
+- 100 Gi
+- doccano vpc
+- force to create a new DB subnet group
+- doccano vpc default sec group
+- 
+
+### Create EC2 instance
+- name= doccano-ec2-20240813-1, Amazon Linux 2023 AMI, t3.medium
+- select key pair
+- select doccano VPC, private subnet
+- No public IP, existing security group 'default' for the doccano VPC
+- 40gb gp3
+-  previously created role ec2_secrets_manager_role ( or create it if not created previously. Give EC2 read permission on the secrets manager with policy SecretsManagerReadWrite and trust relationship to EC2, as well as CloudWatchLogsFullAccess to push the docker logs to cloudwatch) as instance profile. 
+- update ec2_user_data.sh script
+- click on create
+
+### Add instance/s to the target group
+and add the ec2 created previously
+  - For some reason if the instance is only internal it will now turn healthy in the target group. You can just attach a public IP, wait 2/3 minutes for it to turn healthy and then you can remove the elastic IP. That seems to be solving the issue. (TRY added ALB's security group on port 80 in EC2's security group. By doing this, the issue will be resolved.)
+
+### Update SSL Cert and listeners
+- get a cert from certificate manager for the ALB
+- update the DNS provider with the CNAME of the ALB
+- add certificate to the HTTPS 443 listener in the ALB and point to the target group
+- add listener to listen to 80 and redirect (redirect to url) 301 to 443 - Redirect to HTTPS://#{host}:443/#{path}?#{query}
+
+### Deploy new version
+- Update the ec2_user_data.sh file with the new tag
+- Repeat the step `Create EC2 instance`
+- Repeat the step `Add instance/s to the target group`
+- Remove old instance from the target group
+- Terminate old instance
+
+
+# Debug psql and install on machine when ssh from bastion host
+- sudo dnf search postgresql
+- sudo dnf install -y postgresql15

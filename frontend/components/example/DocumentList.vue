@@ -1,55 +1,114 @@
 <template>
-  <v-data-table
-    :value="value"
-    :headers="headers"
-    :items="items"
-    :options.sync="options"
-    :server-items-length="total"
-    :search="search"
-    :loading="isLoading"
-    :loading-text="$t('generic.loading')"
-    :no-data-text="$t('vuetify.noDataAvailable')"
-    :footer-props="{
-      showFirstLastPage: true,
-      'items-per-page-options': [10, 50, 100],
-      'items-per-page-text': $t('vuetify.itemsPerPageText'),
-      'page-text': $t('dataset.pageText')
-    }"
-    item-key="id"
-    show-select
-    @input="$emit('input', $event)"
-  >
-    <template #top>
-      <v-text-field
-        v-model="search"
-        :prepend-inner-icon="mdiMagnify"
-        :label="$t('generic.search')"
-        single-line
-        hide-details
-        filled
-      />
-    </template>
-    <template #[`item.isConfirmed`]="{ item }">
-      <v-chip :color="item.isConfirmed ? 'success' : 'warning'" text small>
-        {{ item.isConfirmed ? 'Finished' : 'In progress' }}
-      </v-chip>
-    </template>
-    <template #[`item.text`]="{ item }">
-      <span class="d-flex d-sm-none">{{ item.text | truncate(50) }}</span>
-      <span class="d-none d-sm-flex">{{ item.text | truncate(200) }}</span>
-    </template>
-    <template #[`item.meta`]="{ item }">
-      {{ JSON.stringify(item.meta, null, 4) }}
-    </template>
-    <template #[`item.commentCount`]="{ item }">
-      <span> {{ item.commentCount }} </span>
-    </template>
-    <template #[`item.action`]="{ item }">
-      <v-btn small color="primary text-capitalize" @click="toLabeling(item)">
-        {{ $t('dataset.annotate') }}
-      </v-btn>
-    </template>
-  </v-data-table>
+  <div>
+    <v-data-table
+      :value="value"
+      :headers="headers"
+      :items="items"
+      :options.sync="options"
+      :server-items-length="total"
+      :search="search"
+      :loading="isLoading"
+      :loading-text="$t('generic.loading')"
+      :no-data-text="$t('vuetify.noDataAvailable')"
+      :footer-props="{
+        showFirstLastPage: true,
+        'items-per-page-options': [10, 50, 100],
+        'items-per-page-text': $t('vuetify.itemsPerPageText'),
+        'page-text': $t('dataset.pageText')
+      }"
+      item-key="id"
+      show-select
+      @input="$emit('input', $event)"
+    >
+      <template #top>
+        <v-text-field
+          v-model="search"
+          :prepend-inner-icon="mdiMagnify"
+          :label="$t('generic.search') + ' (e.g. label:positive)'"
+          single-line
+          hide-details
+          filled
+        />
+      </template>
+      <template #[`item.isConfirmed`]="{ item }">
+        <v-chip :color="item.isConfirmed ? 'success' : 'warning'" text small>
+          {{ item.isConfirmed ? 'Finished' : 'In progress' }}
+        </v-chip>
+      </template>
+      <template #[`item.text`]="{ item }">
+        <span class="d-none d-sm-flex document-text">{{ item.text | truncate(200) }}</span>
+        <span class="d-flex d-sm-none document-text">{{ item.text | truncate(50) }}</span>
+      </template>
+      <template #[`item.meta`]="{ item }">
+        <div class="d-flex flex-column document-text">
+          <span class="d-none d-sm-flex">
+            {{ JSON.stringify(item.meta, null, 4) | truncate(200) }}
+          </span>
+          <span class="d-flex d-sm-none">
+            {{ JSON.stringify(item.meta, null, 4) | truncate(50) }}
+          </span>
+          <template v-if="JSON.stringify(item.meta, null, 4).length >= 200">
+            <v-btn
+              class="text-none"
+              color="primary"
+              text
+              small
+              @click.stop="openSeeFullTextDialog(item.meta)"
+            >
+              See more
+            </v-btn>
+          </template>
+        </div>
+      </template>
+      <template #[`item.assignee`]="{ item }">
+        <v-combobox
+          :value="toSelected(item)"
+          :items="members"
+          item-text="username"
+          no-data-text="No one"
+          multiple
+          chips
+          dense
+          flat
+          hide-selected
+          hide-details
+          small-chips
+          solo
+          background-color="#0000000f"
+          style="width: 200px"
+          @change="onAssignOrUnassign(item, $event)"
+        >
+          <template #selection="{ attrs, item, parent, selected }">
+            <v-chip v-bind="attrs" :input-value="selected" small class="mt-1 mb-1">
+              <span class="pr-1">{{ item.username }}</span>
+              <v-icon small @click="parent.selectItem(item)"> $delete </v-icon>
+            </v-chip>
+          </template>
+        </v-combobox>
+      </template>
+      <template #[`item.action`]="{ item }">
+        <v-btn class="me-1" small color="primary text-capitalize" @click="$emit('edit', item)"
+          >Edit</v-btn
+        >
+        <v-btn small color="primary text-capitalize" @click="toLabeling(item)">
+          {{ $t('dataset.annotate') }}
+        </v-btn>
+      </template>
+    </v-data-table>
+    <v-dialog v-model="dialog" width="500">
+      <v-card>
+        <v-card-title class="text-h5"> </v-card-title>
+        <v-card-text>
+          {{ dialogText }}
+        </v-card-text>
+        <v-divider></v-divider>
+        <v-card-actions>
+          <v-spacer></v-spacer>
+          <v-btn color="primary" text @click="dialog = false"> Close </v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+  </div>
 </template>
 
 <script lang="ts">
@@ -58,6 +117,7 @@ import type { PropType } from 'vue'
 import Vue from 'vue'
 import { DataOptions } from 'vuetify/types'
 import { ExampleDTO } from '~/services/application/example/exampleData'
+import { MemberItem } from '~/domain/models/member/member'
 
 export default Vue.extend({
   props: {
@@ -80,11 +140,22 @@ export default Vue.extend({
       type: Number,
       default: 0,
       required: true
+    },
+    members: {
+      type: Array as PropType<MemberItem[]>,
+      default: () => [],
+      required: true
+    },
+    isAdmin: {
+      type: Boolean,
+      default: false
     }
   },
 
   data() {
     return {
+      dialog: false,
+      dialogText: '',
       search: this.$route.query.q,
       options: {} as DataOptions,
       mdiMagnify
@@ -93,12 +164,7 @@ export default Vue.extend({
 
   computed: {
     headers() {
-      return [
-        {
-          text: 'ID',
-          value: 'id',
-          sortable: false
-        },
+      const headers = [
         {
           text: 'Status',
           value: 'isConfirmed',
@@ -115,16 +181,19 @@ export default Vue.extend({
           sortable: false
         },
         {
-          text: this.$t('comments.comments'),
-          value: 'commentCount',
-          sortable: false
-        },
-        {
           text: this.$t('dataset.action'),
           value: 'action',
           sortable: false
         }
       ]
+      if (this.isAdmin) {
+        headers.splice(3, 0, {
+          text: 'Assignee',
+          value: 'assignee',
+          sortable: false
+        })
+      }
+      return headers
     }
   },
 
@@ -154,12 +223,47 @@ export default Vue.extend({
   },
 
   methods: {
+    openSeeFullTextDialog(text: string) {
+      this.dialog = true
+      this.dialogText = text
+    },
     toLabeling(item: ExampleDTO) {
       const index = this.items.indexOf(item)
       const offset = (this.options.page - 1) * this.options.itemsPerPage
       const page = (offset + index + 1).toString()
       this.$emit('click:labeling', { page, q: this.search })
+    },
+
+    toSelected(item: ExampleDTO) {
+      const assigneeIds = item.assignments.map((assignment) => assignment.assignee_id)
+      return this.members.filter((member) => assigneeIds.includes(member.user))
+    },
+
+    onAssignOrUnassign(item: ExampleDTO, newAssignees: MemberItem[]) {
+      const newAssigneeIds = newAssignees.map((assignee) => assignee.user)
+      const oldAssigneeIds = item.assignments.map((assignment) => assignment.assignee_id)
+      if (oldAssigneeIds.length > newAssigneeIds.length) {
+        // unassign
+        for (const assignment of item.assignments) {
+          if (!newAssigneeIds.includes(assignment.assignee_id)) {
+            this.$emit('unassign', assignment.id)
+          }
+        }
+      } else {
+        // assign
+        for (const newAssigneeId of newAssigneeIds) {
+          if (!oldAssigneeIds.includes(newAssigneeId)) {
+            this.$emit('assign', item.id, newAssigneeId)
+          }
+        }
+      }
     }
   }
 })
 </script>
+
+<style scoped>
+.document-text {
+  padding: 16px;
+}
+</style>

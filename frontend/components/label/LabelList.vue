@@ -27,12 +27,12 @@
       />
     </template>
     <template #[`item.backgroundColor`]="props">
-      <v-chip
-        :color="props.item.backgroundColor"
-        :text-color="$contrastColor(props.item.backgroundColor)"
-      >
+      <v-chip :color="props.item.backgroundColor">
         {{ props.item.backgroundColor }}
       </v-chip>
+    </template>
+    <template #[`item.meta`]="{ item }">
+      {{ JSON.stringify(item.meta, null, 4) }}
     </template>
     <template #[`item.actions`]="{ item }">
       <v-icon small @click="$emit('edit', item)">
@@ -64,6 +64,10 @@ export default Vue.extend({
       type: Array as PropType<LabelDTO[]>,
       default: () => [],
       required: true
+    },
+    disableEdit: {
+      type: Boolean,
+      default: false
     }
   },
 
@@ -77,12 +81,18 @@ export default Vue.extend({
 
   computed: {
     headers() {
-      return [
-        { text: this.$t('generic.name'), value: 'text' },
-        { text: this.$t('labels.shortkey'), value: 'suffixKey' },
-        { text: this.$t('labels.color'), value: 'backgroundColor' },
-        { text: 'Actions', value: 'actions', sortable: false }
+      const headers = [
+        { text: this.$t('generic.name'), value: 'text', sortable: true },
+        { text: this.$t('labels.shortkey'), value: 'suffixKey', sortable: true },
+        { text: this.$t('labels.color'), value: 'backgroundColor', sortable: true },
+        { text: this.$t('labels.description'), value: 'description', sortable: true },
+        { text: this.$t('labels.meta'), value: 'meta', sortable: true }
       ]
+
+      if (!this.disableEdit) {
+        headers.push({ text: 'Actions', value: 'actions', sortable: false })
+      }
+      return headers
     }
   }
 })
