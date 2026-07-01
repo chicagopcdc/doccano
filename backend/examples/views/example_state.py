@@ -28,7 +28,12 @@ class ExampleStateList(generics.ListCreateAPIView):
         queryset = self.get_queryset()
         if queryset.exists():
             queryset.delete()
+            example = get_object_or_404(Example, pk=self.kwargs["example_id"])
+            example.gearbox_status = None
+            example.save(update_fields=["gearbox_status"])
         else:
             example = get_object_or_404(Example, pk=self.kwargs["example_id"])
+            example.gearbox_status = "pending"
+            example.save(update_fields=["gearbox_status"])
             serializer.save(example=example, confirmed_by=self.request.user)
             submit_example_to_gearbox.delay(example.pk, self.kwargs["project_id"])

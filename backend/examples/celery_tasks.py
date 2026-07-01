@@ -63,11 +63,12 @@ def _transform_to_gearbox_format(jsonl_bytes: bytes) -> bytes:
 
 
 @shared_task(
+    bind=True,
     autoretry_for=(requests.exceptions.RequestException,),
     retry_backoff=True,
     max_retries=5,
 )
-def submit_example_to_gearbox(example_id, project_id):
+def submit_example_to_gearbox(self, example_id, project_id):
     example = get_object_or_404(Example, pk=example_id)
     project = get_object_or_404(Project, pk=project_id)
     examples = ExportedExample.objects.filter(pk=example.pk)
@@ -83,6 +84,15 @@ def submit_example_to_gearbox(example_id, project_id):
         tmp.seek(0)
         jsonl_bytes = tmp.read()
 
-    jsonl_bytes = _transform_to_gearbox_format(jsonl_bytes)
-    submit_to_gearbox(jsonl_bytes, filename=f"example_{example.pk}.jsonl")
+    try:
+        jsonl_bytes = _transform_to_gearbox_format(jsonl_bytes)
+        submit_to_gearbox(jsonl_bytes, filename=f"example_{example.pk}.jsonl")
+    except requests.exceptions.RequestException:
+        if self.request.retries == self.max_retries:
+            example.gearbox_status = "failed"
+            example.save(update_fields=["gearbox_status"])
+        raise
+
+    example.gearbox_status = "success"
+    example.save(update_fields=["gearbox_status"])
     logger.info("Successfully submitted example %s to gearbox", example.pk)
