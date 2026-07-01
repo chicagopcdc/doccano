@@ -39,6 +39,9 @@ def _transform_to_gearbox_format(jsonl_bytes: bytes) -> bytes:
         entities = []
         pre_annotated = []
         for entry in raw_labels:
+            if len(entry) < 3:
+                logger.warning("Skipping malformed label entry for example: %s", entry)
+                continue
             start_offset, end_offset, label_name = entry[0], entry[1], entry[2]
             meta = entry[3] if len(entry) > 3 else {}
             entities.append(
@@ -91,6 +94,11 @@ def submit_example_to_gearbox(self, example_id, project_id):
         if self.request.retries == self.max_retries:
             example.gearbox_status = "failed"
             example.save(update_fields=["gearbox_status"])
+        raise
+    except Exception:
+        example.gearbox_status = "failed"
+        example.save(update_fields=["gearbox_status"])
+        logger.exception("Unexpected error submitting example %s to gearbox", example.pk)
         raise
 
     example.gearbox_status = "success"
