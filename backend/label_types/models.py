@@ -46,7 +46,8 @@ class LabelType(models.Model):
             message = "Shortcut key may not have a suffix key."
             raise ValidationError(message)
 
-        # each shortcut (prefix key + suffix key) can only be assigned to one label
+        # each shortcut (prefix key + suffix key) can only be assigned to one
+        # label
         if self.suffix_key or self.prefix_key:
             other_labels = self.labels.exclude(id=self.id)
             if other_labels.filter(suffix_key=self.suffix_key, prefix_key=self.prefix_key).exists():

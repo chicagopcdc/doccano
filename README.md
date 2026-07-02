@@ -226,7 +226,31 @@ Doing this in us-east-1 - Virginia and used the base name `doccano`, so for inst
 ### Populate Secrets needed by the EC2
 - add useful secrets to secrets manager:
   - quay_io_creds (quay.io login creds)
-  - doccano_creds (all the information needed in the .env file, mostly doccano and DB credentials)
+    ```
+    {
+      "user":"",
+      "password":""
+    }
+    ```
+  - doccano_creds
+    ```
+    {
+      "ADMIN_PASSWORD":"",
+      "RABBITMQ_DEFAULT_PASS":"",
+      "POSTGRES_PASSWORD":"",
+      "FLOWER_BASIC_AUTH":"",
+      "POSTGRES_HOST":""
+    }
+    ```
+  - gearbox_creds
+    ```
+    {
+      "FENCE_CLIENT_ID":"",
+      "FENCE_CLIENT_SECRET":"",
+      "FENCE_TOKEN_URL":"https://gearbox-dev.pedscommons.org/user/oauth2/token?grant_type=client_credentials&scope=openid",
+      "GEARBOX_RAW_CRITERIA_URL":"https://gearbox-dev.pedscommons.org/gearbox/raw-criteria"
+    }
+    ```
 
 ### Create VPC
 Select the following options:
@@ -282,8 +306,9 @@ Select the following options:
 - click on create
 
 ### Add instance/s to the target group
-and add the ec2 created previously
-  - For some reason if the instance is only internal it will now turn healthy in the target group. You can just attach a public IP, wait 2/3 minutes for it to turn healthy and then you can remove the elastic IP. That seems to be solving the issue. (TRY added ALB's security group on port 80 in EC2's security group. By doing this, the issue will be resolved.)
+- add the ec2 created previously
+  - Make sure the ALB's security group is added on port 80 in EC2's security group.
+- wait for it to be healthy.
 
 ### Update SSL Cert and listeners
 - get a cert from certificate manager for the ALB
@@ -292,7 +317,7 @@ and add the ec2 created previously
 - add listener to listen to 80 and redirect (redirect to url) 301 to 443 - Redirect to HTTPS://#{host}:443/#{path}?#{query}
 
 ### Deploy new version
-- Update the ec2_user_data.sh file with the new tag
+- Update the docker-compose.prod.yml file with the new tag/s and make sure all the changes are on pcdc_dev branch (this is the branch used in the ec2 user data to start the app, we may want to update that to master for stability and use pcdc_dev for testing TODO)
 - Repeat the step `Create EC2 instance`
 - Repeat the step `Add instance/s to the target group`
 - Remove old instance from the target group

@@ -3,7 +3,7 @@ from typing import Dict, List
 from pydantic import UUID4
 
 from examples.models import Example
-from labels.models import Span, Relation
+from labels.models import Relation, Span
 
 
 class Examples:

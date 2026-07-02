@@ -4,7 +4,7 @@ import i18n from './i18n'
 export default {
   generate: {
     target: 'static',
-    devtools: true,
+    devtools: true
   },
 
   ssr: false,
@@ -181,7 +181,7 @@ export default {
       })
       config.module.rules.push({
         test: /node_modules[\\/]@flatten-js/,
-        loader: require.resolve('esbuild-loader'),
+        loader: require.resolve('esbuild-loader')
       })
     }
   }

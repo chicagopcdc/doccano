@@ -1,4 +1,4 @@
-from typing import List, Optional, Tuple, Type, Union
+from typing import List, Optional, Tuple, Type
 
 import pandas as pd
 from django.core.exceptions import ObjectDoesNotExist
@@ -52,9 +52,9 @@ class ExampleMaker:
                 self._errors.append(error)
         return examples
 
-    def make_or_update(self, df: pd.DataFrame) -> Union[Tuple[List[Example], List[Example]], List[None]]:
+    def make_or_update(self, df: pd.DataFrame) -> Tuple[List[Example], List[Example]]:
         if not self.check_column_existence(df):
-            return []
+            return [], []
         self.check_value_existence(df)
         # make dataframe without exclude columns and missing data
         df_with_data_column = df.loc[:, ~df.columns.isin(self.exclude_columns)]
@@ -69,7 +69,7 @@ class ExampleMaker:
             try:
                 Example.objects.get(uuid=row["example_uuid"])
                 example_exists = True
-            except ObjectDoesNotExist as e:
+            except ObjectDoesNotExist:
                 pass
             try:
                 data = self.data_class.parse(**row)

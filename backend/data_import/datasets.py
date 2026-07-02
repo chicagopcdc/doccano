@@ -48,8 +48,7 @@ class PlainDataset(Dataset):
 
             if update_examples:
                 Examples(update_examples).save_update()
-
-            if create_examples:
+            else:
                 Examples(create_examples).save()
 
     @property
@@ -82,8 +81,8 @@ class DatasetWithSingleLabelType(Dataset):
             update_examples, create_examples = self.example_maker.make_or_update(records)
 
             if update_examples:
-                update_examples = Examples(update_examples)
-                update_examples.save_update()
+                update_examples_instance = Examples(update_examples)
+                update_examples_instance.save_update()
 
                 # make label types
                 labels = self.labels_class(self.label_maker.make(records), self.types)
@@ -91,11 +90,10 @@ class DatasetWithSingleLabelType(Dataset):
                 labels.clean(self.project)
                 labels.save_types(self.project)
                 # create Labels
-                labels.save(user, update_examples)
-
-            if create_examples:
-                create_examples = Examples(create_examples)
-                create_examples.save()
+                labels.save(user, update_examples_instance)
+            else:
+                create_examples_instance = Examples(create_examples)
+                create_examples_instance.save()
 
                 # create label types
                 labels = self.labels_class(self.label_maker.make(records), self.types)
@@ -103,7 +101,7 @@ class DatasetWithSingleLabelType(Dataset):
                 labels.save_types(self.project)
 
                 # create Labels
-                labels.save(user, create_examples)
+                labels.save(user, create_examples_instance)
 
     @property
     def errors(self) -> List[FileParseException]:
@@ -117,13 +115,8 @@ class BinaryDataset(Dataset):
 
     def save(self, user: User, batch_size: int = 1000):
         for records in self.reader.batch(batch_size):
-            update_examples, create_examples = self.example_maker.make_or_update(records)
-
-            if update_examples:
-                Examples(update_examples).save_update()
-
-            if create_examples:
-                Examples(create_examples).save()
+            examples = Examples(self.example_maker.make(records))
+            examples.save()
 
     @property
     def errors(self) -> List[FileParseException]:
@@ -162,10 +155,9 @@ class RelationExtractionDataset(Dataset):
         for records in self.reader.batch(batch_size):
             # create examples
             update_examples, create_examples = self.example_maker.make_or_update(records)
-
             if update_examples:
-                update_examples = Examples(update_examples)
-                update_examples.save_update()
+                update_examples_instance = Examples(update_examples)
+                update_examples_instance.save_update()
 
                 # create label types
                 spans = Spans(self.span_maker.make(records), self.span_types)
@@ -177,12 +169,11 @@ class RelationExtractionDataset(Dataset):
                 relations.save_types(self.project)
 
                 # create Labels
-                spans.save(user, update_examples)
-                relations.save(user, update_examples, spans=spans)
-
-            if create_examples:
-                create_examples = Examples(create_examples)
-                create_examples.save()
+                spans.save(user, update_examples_instance)
+                relations.save(user, update_examples_instance, spans=spans)
+            else:
+                create_examples_instance = Examples(create_examples)
+                create_examples_instance.save()
 
                 # create label types
                 spans = Spans(self.span_maker.make(records), self.span_types)
@@ -194,12 +185,19 @@ class RelationExtractionDataset(Dataset):
                 relations.save_types(self.project)
 
                 # create Labels
-                spans.save(user, create_examples)
-                relations.save(user, create_examples, spans=spans)
+                spans.save(user, create_examples_instance)
+                relations.save(user, create_examples_instance, spans=spans)
 
     @property
     def errors(self) -> List[FileParseException]:
         return self.reader.errors + self.example_maker.errors + self.span_maker.errors + self.relation_maker.errors
+
+
+class SequenceLabelingDataset__LEGACY(DatasetWithSingleLabelType):
+    data_class = TextData
+    label_class = SpanLabel
+    label_type = SpanType
+    labels_class = Spans
 
 
 class SequenceLabelingDataset(RelationExtractionDataset):
@@ -229,8 +227,8 @@ class CategoryAndSpanDataset(Dataset):
             update_examples, create_examples = self.example_maker.make_or_update(records)
 
             if update_examples:
-                update_examples = Examples(update_examples)
-                update_examples.save_update()
+                update_examples_instance = Examples(update_examples)
+                update_examples_instance.save_update()
 
                 # create label types
                 categories = Categories(self.category_maker.make(records), self.category_types)
@@ -242,12 +240,11 @@ class CategoryAndSpanDataset(Dataset):
                 spans.save_types(self.project)
 
                 # create Labels
-                categories.save(user, update_examples)
-                spans.save(user, update_examples)
-
-            if create_examples:
-                create_examples = Examples(create_examples)
-                create_examples.save()
+                categories.save(user, update_examples_instance)
+                spans.save(user, update_examples_instance)
+            else:
+                create_examples_instance = Examples(create_examples)
+                create_examples_instance.save()
 
                 # create label types
                 categories = Categories(self.category_maker.make(records), self.category_types)
@@ -259,8 +256,8 @@ class CategoryAndSpanDataset(Dataset):
                 spans.save_types(self.project)
 
                 # create Labels
-                categories.save(user, create_examples)
-                spans.save(user, create_examples)
+                categories.save(user, create_examples_instance)
+                spans.save(user, create_examples_instance)
 
     @property
     def errors(self) -> List[FileParseException]:
@@ -271,6 +268,7 @@ def select_dataset(project: Project, task: str, file_format: Format) -> Type[Dat
     mapping = {
         ProjectType.DOCUMENT_CLASSIFICATION: TextClassificationDataset,
         ProjectType.SEQUENCE_LABELING: SequenceLabelingDataset,
+        ProjectType.SEQUENCE_LABELING_LEGACY: SequenceLabelingDataset__LEGACY,
         RELATION_EXTRACTION: RelationExtractionDataset,
         ProjectType.SEQ2SEQ: Seq2seqDataset,
         ProjectType.INTENT_DETECTION_AND_SLOT_FILLING: CategoryAndSpanDataset,

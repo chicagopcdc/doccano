@@ -20,6 +20,7 @@ class Example(models.Model):
     annotations_approved_by = models.ForeignKey(to=User, on_delete=models.SET_NULL, null=True, blank=True)
     text = models.TextField(null=True, blank=True)
     score = models.FloatField(default=100)
+    gearbox_status = models.CharField(max_length=20, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True, db_index=True)
     updated_at = models.DateTimeField(auto_now=True)
 

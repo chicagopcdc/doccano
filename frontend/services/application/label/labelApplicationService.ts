@@ -17,7 +17,13 @@ export class LabelApplicationService {
   }
 
   public async create(projectId: string, item: CreateLabelCommand): Promise<LabelDTO> {
-    const label = LabelItem.create(item.text, item.meta, item.prefixKey, item.suffixKey, item.backgroundColor)
+    const label = LabelItem.create(
+      item.text,
+      item.meta,
+      item.prefixKey,
+      item.suffixKey,
+      item.backgroundColor
+    )
     const created = await this.repository.create(projectId, label)
     return new LabelDTO(created)
   }
@@ -29,7 +35,7 @@ export class LabelApplicationService {
       item.meta,
       item.prefixKey,
       item.suffixKey,
-      item.backgroundColor,
+      item.backgroundColor
     )
     const updated = await this.repository.update(projectId, label)
     return new LabelDTO(updated)

@@ -230,7 +230,7 @@ class TestSegmentationCreation(TestDataLabeling, CRUDMixin):
 
 
 class TestLabelDetail:
-    task = ProjectType.SEQUENCE_LABELING
+    task = ProjectType.SEQUENCE_LABELING_LEGACY
     view_name = "annotation_detail"
 
     def setUp(self):
