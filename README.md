@@ -306,8 +306,9 @@ Select the following options:
 - click on create
 
 ### Add instance/s to the target group
-and add the ec2 created previously
-  - For some reason if the instance is only internal it will now turn healthy in the target group. You can just attach a public IP, wait 2/3 minutes for it to turn healthy and then you can remove the elastic IP. That seems to be solving the issue. (TRY added ALB's security group on port 80 in EC2's security group. By doing this, the issue will be resolved.)
+- add the ec2 created previously
+  - Make sure the ALB's security group is added on port 80 in EC2's security group.
+- wait for it to be healthy.
 
 ### Update SSL Cert and listeners
 - get a cert from certificate manager for the ALB
@@ -316,7 +317,7 @@ and add the ec2 created previously
 - add listener to listen to 80 and redirect (redirect to url) 301 to 443 - Redirect to HTTPS://#{host}:443/#{path}?#{query}
 
 ### Deploy new version
-- Update the docker-compose.prod.yml file with the new tag/s
+- Update the docker-compose.prod.yml file with the new tag/s and make sure all the changes are on pcdc_dev branch (this is the branch used in the ec2 user data to start the app, we may want to update that to master for stability and use pcdc_dev for testing TODO)
 - Repeat the step `Create EC2 instance`
 - Repeat the step `Add instance/s to the target group`
 - Remove old instance from the target group
