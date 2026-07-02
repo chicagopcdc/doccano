@@ -69,6 +69,10 @@ def login(username: str, password: str) -> str:
     if not token:
         raise RuntimeError(f"Login succeeded but no 'key' in response: {resp.text}")
 
+    # Clear session cookies so subsequent requests authenticate via token only,
+    # not via the session cookie that dj_rest_auth sets as a side effect.
+    SESSION.cookies.clear()
+
     print("[INFO] Logged in and obtained API token.")
     return token
 
