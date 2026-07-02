@@ -230,8 +230,6 @@ def check_uploaded_files(upload_ids: List[str], file_format: Format):
 
 
 @shared_task(
-    # Retries only for likely-transient infra issues.
-    # We intentionally DO NOT retry for data/validation/constraint errors.
     autoretry_for=(OperationalError, ConnectionError, TimeoutError, SoftTimeLimitExceeded),
     retry_backoff=2,
     retry_jitter=True,
@@ -257,17 +255,15 @@ def import_dataset(user_id, project_id, file_format: str, upload_ids: List[str],
     project = get_object_or_404(Project, pk=project_id)
     user = get_object_or_404(get_user_model(), pk=user_id)
 
-    # Discover max label length constraint for this project's label model (if any).
     label_max_len = get_label_text_max_length_for_project(project)
 
     try:
-        # Build format adapter (e.g., JSONL, CSV, etc.).
         fmt = create_file_format(file_format)
 
         # Validate file size/MIME and clean the upload IDs.
-        upload_ids, errors = check_uploaded_files(upload_ids, fmt)
+        upload_ids, upload_errors = check_uploaded_files(upload_ids, fmt)
+        upload_errors = [e.dict() if hasattr(e, "dict") else e for e in upload_errors]
 
-        # Convert remaining uploads into pipeline FileName objects.
         temporary_uploads = TemporaryUpload.objects.filter(upload_id__in=upload_ids)
         filenames = [
             FileName(
@@ -280,9 +276,12 @@ def import_dataset(user_id, project_id, file_format: str, upload_ids: List[str],
 
         # Pre-flight
         preflight_errors = _preflight_files(fmt, filenames, project, kwargs, label_max_len)
-        if preflight_errors:
+
+        # FIX: combine both error sources instead of discarding upload_errors.
+        combined_errors = upload_errors + preflight_errors
+        if combined_errors:
             # Stop early; nothing written to DB yet.
-            return {"error": preflight_errors}
+            return {"error": combined_errors}
 
         # Build dataset object using the pipeline.
         dataset = load_dataset(task, fmt, filenames, project, **kwargs)
@@ -291,16 +290,21 @@ def import_dataset(user_id, project_id, file_format: str, upload_ids: List[str],
         with transaction.atomic():
             dataset.save(user, batch_size=settings.IMPORT_BATCH_SIZE)
 
-        # Move upload after succes
+        # Move upload after success
         upload_to_store(temporary_uploads)
 
         # Normalize and return any non-fatal dataset errors (usually empty).
-        errors.extend(getattr(dataset, "errors", []))
-        return {"error": [e.dict() if hasattr(e, "dict") else e for e in errors]}
+        dataset_errors = [e.dict() if hasattr(e, "dict") else e for e in getattr(dataset, "errors", [])]
+        return {"error": dataset_errors}
 
     except FileImportException as e:
         # Known import error type from the pipeline: return in the same shape.
         return {"error": [e.dict()]}
+
+    except (OperationalError, ConnectionError, TimeoutError, SoftTimeLimitExceeded):
+        # FIX: these must propagate so Celery's autoretry_for can actually catch
+        # them and schedule a retry.
+        raise
 
     except (DataError, IntegrityError, ProgrammingError) as e:
         # Hard DB/constraint error: return a single, clear error row; no retry.
