@@ -87,44 +87,51 @@ def get_headers() -> Dict[str, str]:
 #
 # PROJECT HELPERS
 #
-def fetch_projects() -> List[Dict[str, Any]]:
+def fetch_projects(name: Optional[str] = None) -> List[Dict[str, Any]]:
     """
-    Fetch projects the same way the frontend does:
-    GET /v1/projects?limit=10&offset=0&q=&ordering=created_at
-    TODO: Resolved with GEAR-567
+    Fetch all projects, optionally filtered server-side by name via `q`,
+    paging through results so a project isn't missed if it falls outside
+    the first page.
     """
-    url = f"{DOCCANO_URL}/v1/projects"  # NOTE: no trailing slash
-    params = {
-        "limit": 10,
-        "offset": 0,
-        "q": "",
-        "ordering": "created_at",
-    }
-    resp = SESSION.get(
-        url,
-        headers=get_headers(),
-        params=params,
-        timeout=TIMEOUT,
-    )
-    try:
-        resp.raise_for_status()
-    except requests.HTTPError as exc:
-        print(
-            f"[ERROR] GET {resp.url} failed: {exc}\n"
-            f"Status: {resp.status_code}\nBody: {resp.text}",
-            file=sys.stderr,
-        )
-        raise
+    url = f"{DOCCANO_URL}/v1/projects"
+    all_results: List[Dict[str, Any]] = []
+    offset = 0
+    limit = 100  # page size; adjust as needed
 
-    data = resp.json()
-    if isinstance(data, dict) and "results" in data:
-        return data["results"]
-    elif isinstance(data, list):
-        return data
-    else:
-        raise RuntimeError(
-            f"Unexpected projects response shape: {type(data)} - {data}"
-        )
+    while True:
+        params = {
+            "limit": limit,
+            "offset": offset,
+            "q": name or "",
+            "ordering": "created_at",
+        }
+        resp = SESSION.get(url, headers=get_headers(), params=params, timeout=TIMEOUT)
+        try:
+            resp.raise_for_status()
+        except requests.HTTPError as exc:
+            print(
+                f"[ERROR] GET {resp.url} failed: {exc}\n"
+                f"Status: {resp.status_code}\nBody: {resp.text}",
+                file=sys.stderr,
+            )
+            raise
+
+        data = resp.json()
+        if isinstance(data, dict) and "results" in data:
+            page = data["results"]
+            all_results.extend(page)
+            if not data.get("next"):
+                break
+        elif isinstance(data, list):
+            # Non-paginated response — assume complete.
+            all_results.extend(data)
+            break
+        else:
+            raise RuntimeError(f"Unexpected projects response shape: {type(data)} - {data}")
+
+        offset += limit
+
+    return all_results
 
 
 def find_project_by_name(projects: List[Dict[str, Any]], name: str) -> Optional[Dict[str, Any]]:
@@ -240,7 +247,7 @@ def get_or_create_project() -> Dict[str, Any]:
 
     Otherwise, fail with a clear error so the user can create it via the UI.
     """
-    projects = fetch_projects()
+    projects = fetch_projects(name=PROJECT_NAME)
     existing = find_project_by_name(projects, PROJECT_NAME)
     if existing:
         print(f"[INFO] Found existing project '{PROJECT_NAME}' (id={existing['id']}).")
