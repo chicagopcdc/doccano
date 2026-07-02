@@ -402,36 +402,18 @@ export default {
             this.taskId = null
             this.isImporting = false
 
-            // Normalize other possible error shapes we might receive
-            const rawErrors = Array.isArray(result.errors)
-              ? result.errors
-              : result.error
-              ? [result.error]
-              : res.error
-              ? [res.error]
-              : result.exc_message
-              ? [result.exc_message]
-              : res.exc_message
-              ? [res.exc_message]
-              : result.traceback
-              ? [result.traceback]
-              : res.traceback
-              ? [res.traceback]
-              : []
-
             // SUCCESS: empty error array means the import worked
             if (errors.length === 0) {
               this.myFiles = []
               this.uploadedFiles = []
-              const projectId = this.$route.params.id || this.projectId
-              // Use replace() so “Back” doesn’t return to the import page
+              const projectId = this.$route.params.id
+              // Use replace() so "Back" doesn't return to the import page
               this.$router.replace(`/projects/${projectId}/dataset`)
               return
             }
 
-            // FAILURE: prefer `errors`, else fall back to normalized variants
-            const source = errors.length ? errors : rawErrors
-            const rows = source.map((e) => ({
+            // FAILURE: normalize the task's error rows for the table
+            const rows = errors.map((e) => ({
               filename: (e && (e.filename || e.file)) || 'Import',
               line: (e && (e.line ?? e.row)) ?? '-',
               message:
@@ -451,7 +433,6 @@ export default {
           }
         } catch (err) {
           // Network/HTTP errors during polling => show a readable message
-          // console.error('Polling failed:', err)
           this.errors = [
             {
               filename: 'Polling error',
