@@ -25,6 +25,14 @@ POSTGRES_HOST="$(echo $doccano_secrets | jq -r '.POSTGRES_HOST')"
 ENCODED_POSTGRES_PASSWORD=$(jq -rn --arg pwd $POSTGRES_PASSWORD '$pwd|@uri')
 
 
+gearbox_secrets_str=$(aws secretsmanager get-secret-value --secret-id gearbox_creds)
+gearbox_secrets="$(echo $gearbox_secrets_str | jq '.SecretString' | jq '. | fromjson')"
+FENCE_CLIENT_ID="$(echo $gearbox_secrets | jq -r '.FENCE_CLIENT_ID')"
+FENCE_CLIENT_SECRET="$(echo $gearbox_secrets | jq -r '.FENCE_CLIENT_SECRET')"
+FENCE_TOKEN_URL="$(echo $gearbox_secrets | jq -r '.FENCE_TOKEN_URL')"
+GEARBOX_RAW_CRITERIA_URL="$(echo $gearbox_secrets | jq -r '.GEARBOX_RAW_CRITERIA_URL')"
+
+
 #define the template.
 env_file=$(cat  << EOF
 # platform settings
@@ -44,6 +52,12 @@ POSTGRES_DB=postgres
 
 # Flower settings
 FLOWER_BASIC_AUTH='$FLOWER_BASIC_AUTH'
+
+# GEARBOx settings
+FENCE_CLIENT_ID='$FENCE_CLIENT_ID'
+FENCE_CLIENT_SECRET='$FENCE_CLIENT_SECRET'
+FENCE_TOKEN_URL='$FENCE_TOKEN_URL'
+GEARBOX_RAW_CRITERIA_URL='$GEARBOX_RAW_CRITERIA_URL'
 EOF
 )
 echo "$env_file" > ./.env
@@ -52,15 +66,5 @@ echo "$env_file" > ./.env
 quay_secrets=$(aws secretsmanager get-secret-value --secret-id quay_io_creds) 
 docker login quay.io -p "$(echo $quay_secrets | jq '.SecretString' | jq '. | fromjson' | jq -r '.password')" -u "$(echo $quay_secrets | jq '.SecretString' | jq '. | fromjson' | jq -r '.user')"
 sudo docker-compose -f docker/docker-compose.prod.yml --env-file .env up -d
-
-
-
-#old command
-# sed -i s/password/D4cGTech/g .env
-# sed -i s/admin/admin/g .env
-# sed -i s/FLOWER_BASIC_AUTH=""/FLOWER_BASIC_AUTH="admin:D4cGTech"/g .env
-# sed -i s/FLOWER_BASIC_AUTH=""/FLOWER_BASIC_AUTH=\"admin:D4cGTech\"/g .env
-# sed -i s/FLOWER_BASIC_AUTH=\"\"/FLOWER_BASIC_AUTH=\"admin:D4cGTech\"/g .env
-
 
 

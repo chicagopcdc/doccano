@@ -30,5 +30,9 @@ def submit_to_gearbox(jsonl_content: bytes, filename: str = "annotations.jsonl")
         files={"file": ("annotations.zip", zip_buffer, "application/zip")},
         timeout=30,
     )
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except requests.exceptions.HTTPError as e:
+        logger.error("Gearbox returned %s: %s", e.response.status_code, e.response.text[:500])
+        raise
     return response
