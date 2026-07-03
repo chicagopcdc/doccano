@@ -68,7 +68,7 @@ export default Vue.extend({
   methods: {
     async tryLogin() {
       try {
-        await this.login({
+        await (this as any).login({
           username: this.username,
           password: this.password
         })
