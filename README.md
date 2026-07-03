@@ -406,3 +406,4 @@ Select the following options:
 
 - sudo dnf search postgresql
 - sudo dnf install -y postgresql15
+

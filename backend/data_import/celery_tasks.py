@@ -1,6 +1,5 @@
-# -*- coding: utf-8 -*-
-
 import json
+import logging
 from pathlib import Path
 from typing import Iterable, List, Optional
 
@@ -21,6 +20,8 @@ from .datasets import load_dataset
 from .pipeline.catalog import Format, create_file_format
 from .pipeline.exceptions import FileImportException, FileTypeException, MaximumFileSizeException
 from .pipeline.readers import FileName
+
+logger = logging.getLogger(__name__)
 
 
 def get_label_text_max_length_for_project(project) -> Optional[int]:
@@ -302,16 +303,22 @@ def import_dataset(user_id, project_id, file_format: str, upload_ids: List[str],
         return {"error": [e.dict()]}
 
     except (OperationalError, ConnectionError, TimeoutError, SoftTimeLimitExceeded):
-        # FIX: these must propagate so Celery's autoretry_for can actually catch
-        # them and schedule a retry.
+        # These are the exception types listed in `autoretry_for` above.
+        # They MUST be re-raised (not swallowed here) so Celery's autoretry
+        # machinery actually sees them and can schedule a retry. If we
+        # caught-and-returned here instead, `autoretry_for` would never fire
+        # since the task would appear to complete successfully.
         raise
 
     except (DataError, IntegrityError, ProgrammingError) as e:
         # Hard DB/constraint error: return a single, clear error row; no retry.
+        logger.warning("import_dataset: DB error for project %s: %s", project_id, e, exc_info=True)
         return {"error": [_err("Server", "-", str(e))]}
 
     except Exception as e:
-        # Catch-all safeguard: return a readable error row; the task will not retry.
+        # Catch-all safeguard: log so real bugs stay visible (Sentry/logs),
+        # then return a readable error row; the task will not retry.
+        logger.exception("import_dataset: unexpected error for project %s", project_id)
         return {"error": [_err("Server", "-", str(e))]}
 
 
