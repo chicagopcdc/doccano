@@ -92,7 +92,7 @@ export default Vue.extend({
       this.$router.push(query)
     },
     movePage(query: object) {
-      const link = getLinkToAnnotationPage(this.projectId, this.project.projectType)
+      const link = getLinkToAnnotationPage(this.projectId, (this as any).project.projectType)
       this.updateQuery({
         path: this.localePath(link),
         query
