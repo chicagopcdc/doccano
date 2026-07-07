@@ -82,7 +82,8 @@ export default Vue.extend({
       }
       return String(ids)
         .split(',')
-        .map(Number)
+        .map((x) => Number(x.trim()))
+        .filter((n) => Number.isFinite(n))
     }
   },
 
