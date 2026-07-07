@@ -69,7 +69,7 @@
 
       <!-- Only show the JSONL tip when the selected format is JSONL (Maybe add others as needed). -->
       <v-alert
-        v-if="selected && /jsonl/i.test(String(selected.value || selected))"
+        v-if="selected && /jsonl/i.test(String(selected))"
         type="info"
         outlined
         dense

@@ -5,6 +5,8 @@ import json
 from typing import Dict, List, Any, Optional, Set
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 #
 # CONFIGURATION
@@ -41,6 +43,29 @@ CREATE_PROJECT_IF_MISSING = os.getenv(
 SESSION = requests.Session()
 TIMEOUT = (5, 30)  # (connect, read)
 
+retry = Retry(
+    total=5,
+    connect=5,
+    read=5,
+    backoff_factor=1,
+    status_forcelist=[
+        429,
+        500,
+        502,
+        503,
+        504,
+    ],
+    allowed_methods=frozenset(
+        ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
+    ),
+    raise_on_status=False,
+)
+
+adapter = HTTPAdapter(max_retries=retry)
+
+SESSION.mount("http://", adapter)
+SESSION.mount("https://", adapter)
+
 
 # AUTH: LOG IN ONCE TO EXCHANGE USERNAME/PASSWORD FOR A DRF TOKEN
 def login(username: str, password: str) -> str:
@@ -65,7 +90,12 @@ def login(username: str, password: str) -> str:
         print(f"[ERROR] Login failed: {exc} - {resp.text}", file=sys.stderr)
         raise
 
-    token = resp.json().get("key")
+    try:
+        payload = resp.json()
+    except ValueError:
+        raise RuntimeError(f"Invalid JSON returned from login: {resp.text}")
+
+    token = payload.get("key")
     if not token:
         raise RuntimeError(f"Login succeeded but no 'key' in response: {resp.text}")
 
@@ -282,6 +312,8 @@ def extract_labels_from_annotations_dir(dir_path: str) -> List[Dict[str, Any]]:
         return []
 
     labels: Set[str] = set()
+    # Used only to detect labels that differ only by case.
+    normalized_labels: Dict[str, str] = {}
     json_files = [f for f in os.listdir(dir_path) if f.lower().endswith(".json")]
 
     if not json_files:
@@ -316,8 +348,33 @@ def extract_labels_from_annotations_dir(dir_path: str) -> List[Dict[str, Any]]:
                 if not isinstance(ent, dict):
                     continue
                 label = ent.get("label")
-                if isinstance(label, str) and label.strip():
-                    labels.add(label.strip())
+                if not isinstance(label, str):
+                    continue
+
+                stripped = label.strip()
+                if not stripped:
+                    continue
+
+                # Warn if the annotation contains accidental whitespace.
+                if stripped != label:
+                    print(
+                        f"[WARN] Label '{label}' contains leading/trailing whitespace. "
+                        f"Using '{stripped}'.",
+                        file=sys.stderr,
+                    )
+
+                key = stripped.casefold()
+                existing = normalized_labels.get(key)
+                if existing and existing != stripped:
+                    print(
+                        f"[WARN] Possible duplicate labels differing only by case: "
+                        f"'{existing}' and '{stripped}'",
+                        file=sys.stderr,
+                    )
+                else:
+                    normalized_labels[key] = stripped
+
+                labels.add(stripped)
 
     if not labels:
         print(f"[WARN] No labels found in annotations directory '{dir_path}'.", file=sys.stderr)
@@ -403,6 +460,7 @@ def sync_labels(project_id: int, label_specs: List[Dict[str, Any]]) -> None:
             else:
                 created += 1
                 print(f"[INFO] Created label '{text}'.")
+                by_text[text] = resp.json()
         else:
             # Update existing span-type (label)
             label_id = current["id"]

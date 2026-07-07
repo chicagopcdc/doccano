@@ -3,6 +3,8 @@ from typing import Dict, List, Type
 from label_types.models import LabelType
 from projects.models import Project
 
+from .exceptions import FieldTooLongException
+
 
 class LabelTypes:
     def __init__(self, label_type_class: Type[LabelType]):
@@ -16,6 +18,16 @@ class LabelTypes:
         return self.types[text]
 
     def save(self, label_types: List[LabelType]):
+        max_length = self.label_type_class._meta.get_field("text").max_length
+        if max_length is not None:
+            too_long = list(dict.fromkeys(lt.text for lt in label_types if lt.text and len(lt.text) > max_length))
+            if too_long:
+                raise FieldTooLongException(
+                    filename=self.label_type_class.__name__,
+                    field_name="text",
+                    values=too_long,
+                    max_length=max_length,
+                )
         self.label_type_class.objects.bulk_create(label_types, ignore_conflicts=True)
 
     def update(self, project: Project):
