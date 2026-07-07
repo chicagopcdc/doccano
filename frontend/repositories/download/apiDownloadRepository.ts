@@ -3,11 +3,19 @@ import ApiService from '@/services/api.service'
 export class APIDownloadRepository {
   constructor(private readonly request = ApiService) {}
 
-  async prepare(projectId: string, format: string, exportApproved: boolean): Promise<string> {
+  async prepare(
+    projectId: string,
+    format: string,
+    exportApproved: boolean,
+    ids?: number[]
+  ): Promise<string> {
     const url = `/projects/${projectId}/download`
-    const data = {
+    const data: { format: string; exportApproved: boolean; ids?: number[] } = {
       format,
       exportApproved
+    }
+    if (ids && ids.length > 0) {
+      data.ids = ids
     }
     const response = await this.request.post(url, data)
     return response.data.task_id

@@ -72,6 +72,18 @@ export default Vue.extend({
     example(): string {
       const item = this.formats.find((item: Format) => item.name === this.selectedFormat)
       return item!.example.trim()
+    },
+
+    // Ids of the examples selected on the dataset list page, if any were passed along
+    selectedIds(): number[] {
+      const ids = this.$route.query.ids
+      if (!ids) {
+        return []
+      }
+      return String(ids)
+        .split(',')
+        .map((x) => Number(x.trim()))
+        .filter((n) => Number.isFinite(n))
     }
   },
 
@@ -98,7 +110,8 @@ export default Vue.extend({
       this.taskId = await this.$repositories.download.prepare(
         this.projectId,
         this.selectedFormat,
-        this.exportApproved
+        this.exportApproved,
+        this.selectedIds
       )
       this.pollData()
     },
