@@ -5,6 +5,8 @@ import json
 from typing import Dict, List, Any, Optional, Set
 
 import requests
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 #
 # CONFIGURATION
@@ -41,6 +43,29 @@ CREATE_PROJECT_IF_MISSING = os.getenv(
 SESSION = requests.Session()
 TIMEOUT = (5, 30)  # (connect, read)
 
+retry = Retry(
+    total=5,
+    connect=5,
+    read=5,
+    backoff_factor=1,
+    status_forcelist=[
+        429,
+        500,
+        502,
+        503,
+        504,
+    ],
+    allowed_methods=frozenset(
+        ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
+    ),
+    raise_on_status=False,
+)
+
+adapter = HTTPAdapter(max_retries=retry)
+
+SESSION.mount("http://", adapter)
+SESSION.mount("https://", adapter)
+
 
 # AUTH: LOG IN ONCE TO EXCHANGE USERNAME/PASSWORD FOR A DRF TOKEN
 def login(username: str, password: str) -> str:
@@ -65,7 +90,12 @@ def login(username: str, password: str) -> str:
         print(f"[ERROR] Login failed: {exc} - {resp.text}", file=sys.stderr)
         raise
 
-    token = resp.json().get("key")
+    try:
+    payload = resp.json()
+    except ValueError:
+        raise RuntimeError(f"Invalid JSON returned from login: {resp.text}")
+
+    token = payload.get("key")
     if not token:
         raise RuntimeError(f"Login succeeded but no 'key' in response: {resp.text}")
 
