@@ -5,7 +5,7 @@
       <!-- Top action menu for import/export and assignment ops -->
       <action-menu
         @upload="$router.push('dataset/import')"
-        @download="$router.push('dataset/export')"
+        @download="goToExport"
         @assign="dialogAssignment = true"
         @reset="dialogReset = true"
       />
@@ -236,6 +236,15 @@ export default Vue.extend({
     // Update query params (pagination, filters, etc.) via router
     updateQuery(query: object) {
       this.$router.push(query)
+    },
+
+    // Navigate to the export page, carrying over the selected example ids (if any)
+    goToExport() {
+      const query: Record<string, string> = {}
+      if (this.selected.length > 0) {
+        query.ids = this.selected.map((item) => item.id).join(',')
+      }
+      this.$router.push({ path: 'dataset/export', query })
     },
 
     /**
