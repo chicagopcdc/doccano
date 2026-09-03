@@ -2,7 +2,7 @@ provider "aws" {
   region = var.aws_region
   default_tags {
     tags = {
-      Environment = var.environment
+      Environment = var.env_name
       Name        = var.app_name
     }
   }
